@@ -1,0 +1,90 @@
+{
+  "attacks": [
+    {
+      "attack_type": "SQLi",
+      "technique": "Classic OR 1=1 with dash",
+      "raw_text": "GET /login?user=admin' OR 1=1-- HTTP/1.1",
+      "source": "Apache-HTTP"
+    },
+    {
+      "attack_type": "SQLi",
+      "technique": "Union Select",
+      "raw_text": "GET /products?id=1 UNION SELECT null, username, password FROM users-- HTTP/1.1",
+      "source": "Apache-HTTP"
+    },
+    {
+      "attack_type": "SQLi",
+      "technique": "URL Encoded Union",
+      "raw_text": "GET /search?q=%27%20UNION%20SELECT%201,2-- HTTP/1.1",
+      "source": "Apache-HTTP"
+    },
+    {
+      "attack_type": "SQLi",
+      "technique": "Inline Comment",
+      "raw_text": "GET /item?id=1'/**/OR/**/'1'='1 HTTP/1.1",
+      "source": "Apache-HTTP"
+    },
+    {
+      "attack_type": "XSS",
+      "technique": "Basic Script Tag",
+      "raw_text": "GET /search?q=<script>alert(1)</script> HTTP/1.1",
+      "source": "Apache-HTTP"
+    },
+    {
+      "attack_type": "XSS",
+      "technique": "Img Onerror",
+      "raw_text": "GET /avatar?url=x<img src=x onerror=alert(1)> HTTP/1.1",
+      "source": "Apache-HTTP"
+    },
+    {
+      "attack_type": "XSS",
+      "technique": "Javascript URI",
+      "raw_text": "GET /redirect?url=javascript:alert(document.cookie) HTTP/1.1",
+      "source": "Apache-HTTP"
+    },
+    {
+      "attack_type": "SSH",
+      "technique": "Exceeded attempts",
+      "raw_text": "sshd[512]: error: maximum authentication attempts exceeded for root from 198.51.100.22 port 44321 ssh2",
+      "source": "Syslog-SSH"
+    }
+  ],
+  "innocent": [
+    {
+      "category": "innocent",
+      "technique": "Clean GET",
+      "raw_text": "GET /index.html HTTP/1.1 200 OK",
+      "source": "Apache-HTTP"
+    },
+    {
+      "category": "innocent",
+      "technique": "Dashes in slug",
+      "raw_text": "GET /posts/how-to--code HTTP/1.1 200 OK",
+      "source": "Apache-HTTP"
+    },
+    {
+      "category": "innocent",
+      "technique": "Select in query",
+      "raw_text": "GET /shop?q=select+items HTTP/1.1 200 OK",
+      "source": "Apache-HTTP"
+    },
+    {
+      "category": "innocent",
+      "technique": "Union word",
+      "raw_text": "GET /news?topic=credit-union HTTP/1.1 200 OK",
+      "source": "Apache-HTTP"
+    },
+    {
+      "category": "innocent",
+      "technique": "Script asset",
+      "raw_text": "GET /static/app-script.js HTTP/1.1 200 OK",
+      "source": "Apache-HTTP"
+    },
+    {
+      "category": "innocent",
+      "technique": "Single failed ssh",
+      "raw_text": "sshd[101]: Failed password for invalid user admin from 10.0.0.1 port 52123 ssh2",
+      "source": "Syslog-SSH"
+    }
+  ]
+}

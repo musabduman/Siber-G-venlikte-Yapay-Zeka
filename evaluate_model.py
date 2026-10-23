@@ -1,246 +1,228 @@
 """
-Tier 1 ML Model Evaluation Script
-==================================
-Generates a synthetic balanced dataset (200 samples), trains Tier1PreFilter from scratch
-on an 80/20 split, evaluates on the test set, and saves results to data/evaluation_results.json.
-
-Usage:
-    python evaluate_model.py
+Tier 1 Pre-Filter Performance & Latency Evaluation Script.
+==========================================================
+Evaluates the Tier 1 pipeline with explicit data source labeling.
+Supports:
+1) Real CIC-IDS2017 CSV if path specified via CIC_IDS2017_CSV_PATH env var.
+2) Synthetic CIC-IDS2017-like flow dataset (data/synthetic_cic_flows.csv).
+Outputs:
+- Confusion Matrix, Precision, Recall, F1, Accuracy
+- Precision-Recall Curve data and False Positive Rate at operational threshold (0.65)
+- End-to-end inference latency benchmark (mean & p95 ms across full pipeline)
+- Writes honest, structured metrics to data/evaluation_results.json
 """
 
-import sys
+import io
 import json
-import time
 import os
 from pathlib import Path
+import sys
+import time
+from typing import Dict, Tuple
 
 sys.path.append(".")
 
-# Fix Windows terminal encoding for emoji output
+# Fix Windows terminal UTF-8 encoding
 if sys.platform == "win32":
-    import io
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+import pandas as pd
 from sklearn.linear_model import SGDClassifier
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    precision_recall_curve,
+    precision_score,
+    recall_score,
+    f1_score,
+)
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-# ─────────────────────────────────────────────────────────────────
-# 1.  Build synthetic balanced dataset (200 samples, ±20% Gaussian noise)
-# ─────────────────────────────────────────────────────────────────
-NORMAL_PROFILES = np.array([
-    [80,   120,   4,    450.0,    1],   # Normal HTTP
-    [443, 1500,  12,  2400.0,    1],   # Normal HTTPS
-    [22, 45000, 240,   310.0,    1],   # Normal SSH session
-    [80,    80,   3,   220.0,    1],
-    [443,  600,   8,  1200.0,    1],
-    [8080, 200,   5,   500.0,    1],
-    [3306, 3000, 20,   800.0,    1],
-], dtype=float)
+from config.settings import settings
+from schemas.events import LogEntry, LogSource
+from tier1.pre_filter import Tier1PreFilter
 
-ATTACK_PROFILES = {
-    "SQLi":     np.array([80,   450,    6,    1280.0,    1], dtype=float),
-    "XSS":      np.array([443,  320,    5,     980.0,    1], dtype=float),
-    "SSH_BF":   np.array([22,    85,   18,    4200.0,    4], dtype=float),
-    "DDoS":     np.array([80,    15, 1250,  890000.0, 1250], dtype=float),
-}
-
-# Feature column indices for controlled noise (avoid making noisy values nonsensical)
-NOISE_RATIO = 0.20
-RANDOM_SEED = 42
-rng = np.random.default_rng(RANDOM_SEED)
+DATA_DIR = Path("data")
+RESULTS_PATH = DATA_DIR / "evaluation_results.json"
 
 
-def _noisy(base: np.ndarray, n: int) -> np.ndarray:
-    """Return n noisy copies of base vector (±20% Gaussian relative noise)."""
-    noise = rng.normal(loc=1.0, scale=NOISE_RATIO, size=(n, len(base)))
-    samples = base * noise
-    # Keep dest_port as integer-like and non-negative; keep syn_flag_count ≥ 1
-    samples[:, 0] = np.clip(np.round(samples[:, 0]), 1, 65535)
-    samples[:, 2] = np.clip(np.round(samples[:, 2]), 1, None)
-    samples[:, 3] = np.clip(samples[:, 3], 0.1, None)
-    samples[:, 4] = np.clip(np.round(samples[:, 4]), 1, None)
-    return samples
-
-
-def build_dataset():
+def load_data() -> Tuple[np.ndarray, np.ndarray, str]:
     """
-    Builds dataset using the real CIC-IDS2017 flow data CSV (450 samples)
-    with fallback to synthetic profiles.
+    Loads dataset: checks CIC_IDS2017_CSV_PATH env var, else uses synthetic_cic_flows.csv.
+    Returns (X, y, data_source_label).
     """
-    csv_path = Path("data/cic_ids2017_sample.csv")
-    if csv_path.exists():
-        import pandas as pd
-        df = pd.read_csv(csv_path)
-        feature_cols = ['Destination Port', 'Flow Duration', 'Total Fwd Packets', 'Flow Bytes/s', 'SYN Flag Count']
-        X = df[feature_cols].values.astype(float)
-        y = (df['Label'] != 'BENIGN').astype(int).values
-        print(f"📁 Loaded {len(X)} flow records directly from {csv_path.name}")
-        return X, y
+    env_path = os.environ.get("CIC_IDS2017_CSV_PATH")
+    if env_path and Path(env_path).exists():
+        df = pd.read_csv(env_path)
+        source_label = f"Gerçek CIC-IDS2017 ({Path(env_path).name})"
+        # If timestamp or day column exists, day-based split can be performed
+    else:
+        synthetic_path = DATA_DIR / "synthetic_cic_flows.csv"
+        if not synthetic_path.exists():
+            from scripts.make_dataset import generate_dataset
+            generate_dataset()
+        df = pd.read_csv(synthetic_path)
+        source_label = "Sentetik (CIC-IDS2017 Benzeri, scripts/make_dataset.py)"
 
-    # Fallback synthetic generator if CSV missing
-    per_profile_normal = 100 // len(NORMAL_PROFILES)
-    extra_normal       = 100 - per_profile_normal * len(NORMAL_PROFILES)
+    ports = df["dest_port"].values
+    is_web = np.isin(ports, [80, 443, 8080]).astype(float)
+    is_ssh = (ports == 22).astype(float)
+    is_db = np.isin(ports, [3306, 5432]).astype(float)
+    is_dns = (ports == 53).astype(float)
 
-    normal_parts = []
-    for i, profile in enumerate(NORMAL_PROFILES):
-        n = per_profile_normal + (1 if i < extra_normal else 0)
-        normal_parts.append(_noisy(profile, n))
-    X_normal = np.vstack(normal_parts)
-    y_normal = np.zeros(len(X_normal), dtype=int)
+    log_dur = np.log1p(np.maximum(df["flow_duration"].values, 0))
+    log_pkts = np.log1p(np.maximum(df["total_fwd_packets"].values, 0))
+    log_bytes = np.log1p(np.maximum(df["flow_bytes_per_sec"].values, 0))
+    log_syn = np.log1p(np.maximum(df["syn_flag_count"].values, 0))
 
-    # ── Attacks: 25 samples × 4 attack types = 100 ─────────────────────────
-    attack_parts = []
-    for profile in ATTACK_PROFILES.values():
-        attack_parts.append(_noisy(profile, 25))
-    X_attack = np.vstack(attack_parts)
-    y_attack  = np.ones(len(X_attack), dtype=int)
-
-    X = np.vstack([X_normal, X_attack])
-    y = np.concatenate([y_normal, y_attack])
-
-    return X, y
+    X = np.column_stack([is_web, is_ssh, is_db, is_dns, log_dur, log_pkts, log_bytes, log_syn])
+    y = df["label"].values.astype(int)
+    return X, y, source_label
 
 
-# ─────────────────────────────────────────────────────────────────
-# 2.  Train + Evaluate
-# ─────────────────────────────────────────────────────────────────
-
-def train_and_evaluate(X_train, X_test, y_train, y_test):
-    """Train a fresh SGDClassifier (same hyperparams as Tier1PreFilter) and evaluate."""
-    scaler = StandardScaler()
-    scaler.fit(X_train)
-    X_train_s = scaler.transform(X_train)
-    X_test_s  = scaler.transform(X_test)
-
-    clf = SGDClassifier(loss="log_loss", penalty="l2", alpha=1e-4, random_state=RANDOM_SEED, max_iter=1000)
-    clf.fit(X_train_s, y_train)
-
-    y_pred = clf.predict(X_test_s)
-
-    return clf, scaler, y_pred
-
-
-def measure_inference_time(clf, scaler, X_test, n_runs=1000):
-    """Measure average per-sample inference time over n_runs predictions."""
-    # Use a random single sample each time
-    sample_idx = rng.integers(0, len(X_test), size=n_runs)
-    times = []
-    for idx in sample_idx:
-        x = scaler.transform(X_test[idx:idx+1])
-        t0 = time.perf_counter()
-        clf.predict_proba(x)
-        times.append((time.perf_counter() - t0) * 1000.0)
-    return float(np.mean(times))
-
-
-# ─────────────────────────────────────────────────────────────────
-# 3.  Main
-# ─────────────────────────────────────────────────────────────────
-
-def main():
-    print("\n📊 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    print("   Tier 1 ML Model — Evaluation Report")
-    print("📊 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
-
-    # ── Dataset ────────────────────────────────────────────────────
-    print("🔧 Building synthetic dataset (200 samples, ±20% Gaussian noise)...")
-    X, y = build_dataset()
-    print(f"   Total samples  : {len(X)}")
-    print(f"   Normal  (y=0)  : {(y == 0).sum()}")
-    print(f"   Attack  (y=1)  : {(y == 1).sum()}\n")
-
-    # ── Split ──────────────────────────────────────────────────────
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.20, random_state=RANDOM_SEED, stratify=y
+def benchmark_end_to_end_latency(prefilter: Tier1PreFilter, n_iterations: int = 1000) -> Dict[str, float]:
+    """
+    Measures complete end-to-end inference latency:
+    Text Normalizer -> Regex Heuristics -> Feature Extraction -> Scaler -> ML Predict Proba.
+    """
+    sample_entry = LogEntry(
+        source=LogSource.APACHE_WEB,
+        ip_src="192.168.1.15",
+        ip_dst="192.168.1.100",
+        port_dst=80,
+        raw_text="GET /api/v1/status?check=live HTTP/1.1 200 OK",
+        features={
+            "dest_port": 80,
+            "flow_duration": 150,
+            "total_fwd_packets": 4,
+            "flow_bytes_per_sec": 450.0,
+            "syn_flag_count": 1,
+        },
     )
-    print(f"✂️  Train / Test split: {len(X_train)} / {len(X_test)} (80/20 stratified)\n")
 
-    # ── Train ──────────────────────────────────────────────────────
-    print("🤖 Training fresh SGDClassifier (log_loss, l2, α=1e-4)...")
-    clf, scaler, y_pred = train_and_evaluate(X_train, X_test, y_train, y_test)
-    print("   Training complete.\n")
+    # Warmup
+    for _ in range(50):
+        prefilter.evaluate(sample_entry)
 
-    # ── Metrics ────────────────────────────────────────────────────
-    acc = accuracy_score(y_test, y_pred)
-    cm  = confusion_matrix(y_test, y_pred)
-    report_dict = classification_report(y_test, y_pred, target_names=["Normal", "Attack"], output_dict=True)
-    report_str  = classification_report(y_test, y_pred, target_names=["Normal", "Attack"])
+    latencies_ms = []
+    for _ in range(n_iterations):
+        t0 = time.perf_counter()
+        prefilter.evaluate(sample_entry)
+        elapsed_ms = (time.perf_counter() - t0) * 1000.0
+        latencies_ms.append(elapsed_ms)
 
-    print("─────────────────────────────────────────────────────")
-    print("📋 Confusion Matrix:")
-    print(f"   TN={cm[0,0]:4d}  FP={cm[0,1]:4d}")
-    print(f"   FN={cm[1,0]:4d}  TP={cm[1,1]:4d}")
-    print()
-    print("📋 Classification Report:")
-    print(report_str)
-    print(f"✅ Overall Accuracy : {acc * 100:.2f}%")
-
-    # ── Inference time ─────────────────────────────────────────────
-    print("\n⏱️  Measuring average inference time (1000 predictions)...")
-    avg_ms = measure_inference_time(clf, scaler, X_test)
-    print(f"   Average inference time per sample: {avg_ms:.4f} ms\n")
-
-    # ── Save JSON ──────────────────────────────────────────────────
-    data_dir = Path("data")
-    data_dir.mkdir(exist_ok=True)
-    output_path = data_dir / "evaluation_results.json"
-
-    results = {
-        "dataset": {
-            "total_samples": int(len(X)),
-            "normal_count": int((y == 0).sum()),
-            "attack_count": int((y == 1).sum()),
-            "train_size": int(len(X_train)),
-            "test_size": int(len(X_test)),
-            "noise_ratio": NOISE_RATIO,
-            "random_seed": RANDOM_SEED,
-        },
-        "model": {
-            "type": "SGDClassifier",
-            "loss": "log_loss",
-            "penalty": "l2",
-            "alpha": 1e-4,
-        },
-        "confusion_matrix": cm.tolist(),
-        "per_class": {
-            "Normal": {
-                "precision": round(report_dict["Normal"]["precision"], 4),
-                "recall":    round(report_dict["Normal"]["recall"],    4),
-                "f1_score":  round(report_dict["Normal"]["f1-score"],  4),
-                "support":   int(report_dict["Normal"]["support"]),
-            },
-            "Attack": {
-                "precision": round(report_dict["Attack"]["precision"], 4),
-                "recall":    round(report_dict["Attack"]["recall"],    4),
-                "f1_score":  round(report_dict["Attack"]["f1-score"],  4),
-                "support":   int(report_dict["Attack"]["support"]),
-            },
-        },
-        "overall": {
-            "accuracy": round(float(acc), 4),
-            "macro_avg_precision": round(report_dict["macro avg"]["precision"], 4),
-            "macro_avg_recall":    round(report_dict["macro avg"]["recall"],    4),
-            "macro_avg_f1":        round(report_dict["macro avg"]["f1-score"],  4),
-        },
-        "inference": {
-            "n_runs": 1000,
-            "avg_ms_per_sample": round(avg_ms, 6),
-        },
+    latencies_arr = np.array(latencies_ms)
+    return {
+        "mean_latency_ms": round(float(np.mean(latencies_arr)), 3),
+        "median_latency_ms": round(float(np.median(latencies_arr)), 3),
+        "p95_latency_ms": round(float(np.percentile(latencies_arr, 95)), 3),
+        "p99_latency_ms": round(float(np.percentile(latencies_arr, 99)), 3),
+        "min_latency_ms": round(float(np.min(latencies_arr)), 3),
+        "max_latency_ms": round(float(np.max(latencies_arr)), 3),
+        "samples_tested": n_iterations,
     }
 
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=2)
 
-    print(f"💾 Results saved → {output_path.resolve()}")
-    print("\n📊 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    print("   Evaluation complete.")
-    print("📊 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+def main():
+    print("=" * 70)
+    print("🚀  AI-SOC TIER 1 MODEL & PIPELINE EVALUATION")
+    print("=" * 70)
 
-    return results
+    X, y, source_label = load_data()
+    print(f"📊 Veri Kaynağı: {source_label}")
+    print(f"Total Samples: {len(X)} (Benign: {np.sum(y == 0)}, Attack: {np.sum(y == 1)})")
+
+    # 80/20 train/test split with stratification
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.20, random_state=42, stratify=y
+    )
+
+    scaler = StandardScaler()
+    X_train_s = scaler.fit_transform(X_train)
+    X_test_s = scaler.transform(X_test)
+
+    clf = SGDClassifier(loss="log_loss", penalty="l2", alpha=1e-4, random_state=42, max_iter=1000)
+    clf.fit(X_train_s, y_train)
+
+    # Predictions at operational threshold (0.65)
+    y_prob = clf.predict_proba(X_test_s)[:, 1]
+    op_threshold = settings.ML_ANOMALY_THRESHOLD
+    y_pred = (y_prob >= op_threshold).astype(int)
+
+    # Classification Metrics
+    cm = confusion_matrix(y_test, y_pred)
+    tn, fp, fn, tp = cm.ravel()
+
+    acc = float(accuracy_score(y_test, y_pred))
+    prec = float(precision_score(y_test, y_pred, zero_division=0))
+    rec = float(recall_score(y_test, y_pred, zero_division=0))
+    f1 = float(f1_score(y_test, y_pred, zero_division=0))
+    fp_rate = float(fp / (fp + tn)) if (fp + tn) > 0 else 0.0
+
+    # Precision-Recall Curve points
+    precisions, recalls, pr_thresholds = precision_recall_curve(y_test, y_prob)
+    # Sample 10 evenly spaced PR points to keep JSON lightweight
+    idx_sample = np.linspace(0, len(pr_thresholds) - 1, 10, dtype=int)
+    pr_curve_sample = [
+        {
+            "threshold": round(float(pr_thresholds[i]), 3),
+            "precision": round(float(precisions[i]), 3),
+            "recall": round(float(recalls[i]), 3),
+        }
+        for i in idx_sample
+    ]
+
+    print("\n📈 TEST SET CONFUSION MATRIX:")
+    print(f"  TN: {tn:<6} | FP: {fp:<6} (False Positives)")
+    print(f"  FN: {fn:<6} | TP: {tp:<6} (True Detections)")
+
+    print("\n🎯 TEST SET METRICS (Operational Threshold = 0.65):")
+    print(f"  Accuracy:          {acc:.4f} ({acc*100:.1f}%)")
+    print(f"  Precision:         {prec:.4f}")
+    print(f"  Recall:            {rec:.4f}")
+    print(f"  F1-Score:          {f1:.4f}")
+    print(f"  False Pos Rate:    {fp_rate:.4f} ({fp_rate*100:.2f}%)")
+
+    # End-to-end Latency Benchmark
+    print("\n⏱️ BENCHMARKING END-TO-END PIPELINE INFERENCE (1000 iterations)...")
+    prefilter = Tier1PreFilter()
+    latency_stats = benchmark_end_to_end_latency(prefilter, n_iterations=1000)
+    print(f"  Mean Latency:      {latency_stats['mean_latency_ms']:.3f} ms")
+    print(f"  P95 Latency:       {latency_stats['p95_latency_ms']:.3f} ms")
+    print(f"  P99 Latency:       {latency_stats['p99_latency_ms']:.3f} ms")
+
+    results_data = {
+        "timestamp": time.time(),
+        "data_source": source_label,
+        "is_synthetic": "Sentetik" in source_label,
+        "operational_threshold": op_threshold,
+        "train_samples": len(X_train),
+        "test_samples": len(X_test),
+        "confusion_matrix": {
+            "tn": int(tn),
+            "fp": int(fp),
+            "fn": int(fn),
+            "tp": int(tp),
+        },
+        "metrics": {
+            "accuracy": round(acc, 4),
+            "precision": round(prec, 4),
+            "recall": round(rec, 4),
+            "f1_score": round(f1, 4),
+            "false_positive_rate": round(fp_rate, 4),
+        },
+        "pr_curve_sample": pr_curve_sample,
+        "end_to_end_latency_ms": latency_stats,
+    }
+
+    with open(RESULTS_PATH, "w", encoding="utf-8") as f:
+        json.dump(results_data, f, indent=2)
+
+    print(f"\nSaved evaluation metrics to {RESULTS_PATH}")
+    return results_data
 
 
 if __name__ == "__main__":

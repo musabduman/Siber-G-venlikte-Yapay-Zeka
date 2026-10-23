@@ -1,0 +1,26 @@
+{
+  "baseline_sgd_raw_features": {
+    "mean_f1": 0.5709,
+    "mean_accuracy": 0.7344,
+    "mean_precision": 0.8855,
+    "mean_recall": 0.4896
+  },
+  "new_sgd_log1p_port_flags": {
+    "mean_f1": 0.9419,
+    "mean_accuracy": 0.957,
+    "mean_precision": 0.9604,
+    "mean_recall": 0.9271
+  },
+  "decision_tree_depth_4": {
+    "mean_f1": 0.9855,
+    "mean_accuracy": 0.9891,
+    "mean_precision": 0.9839,
+    "mean_recall": 0.9875
+  },
+  "random_forest_100": {
+    "mean_f1": 1.0,
+    "mean_accuracy": 1.0,
+    "mean_precision": 1.0,
+    "mean_recall": 1.0
+  }
+}

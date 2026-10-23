@@ -1,0 +1,27 @@
+{
+  "timestamp": 1792791525.5675735,
+  "baseline_metrics": {
+    "f1": 0.6825,
+    "accuracy": 0.665,
+    "precision": 0.5538,
+    "recall": 0.8889
+  },
+  "post_legitimate_metrics": {
+    "f1": 0.8199,
+    "accuracy": 0.855,
+    "precision": 0.825,
+    "recall": 0.8148
+  },
+  "post_poisoning_metrics": {
+    "f1": 0.8199,
+    "accuracy": 0.855,
+    "precision": 0.825,
+    "recall": 0.8148
+  },
+  "f1_drop_legitimate": -0.1374,
+  "f1_drop_poisoning": -0.1374,
+  "anti_poisoning_rollbacks_count": 5,
+  "test_1_robustness_passed": true,
+  "test_2_poisoning_resilience_passed": true,
+  "conclusion": "Catastrophic drift prevented via holdout validation and automatic weight rollback."
+}

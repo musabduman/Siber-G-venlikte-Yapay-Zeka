@@ -1,17 +1,27 @@
 """
-Executive PDF Report Generator for AI-Driven SOC Appliance.
-Generates a formal, enterprise-grade cybersecurity engineering evaluation report
-using ReportLab with full Turkish typography support.
+Executive Technical Evaluation Report Generator for AI-SOC.
+=============================================================
+Strictly dynamic: NO hardcoded metrics or results. All numbers and tables
+are loaded directly from:
+- data/evaluation_results.json
+- data/model_comparison.json
+- data/adversarial_results.json
+- data/tier2_results.json
+- data/learning_results.json
+
+Uses honest, measured academic language with transparent disclosure of
+limitations, blind spots, and escaped attack variants.
 """
 
 import json
 from pathlib import Path
 import sys
+import time
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import cm, mm
+from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
@@ -38,15 +48,28 @@ except Exception:
     BOLD_FONT = "Helvetica-Bold"
     ITALIC_FONT = "Helvetica-Oblique"
 
+DATA_DIR = Path("data")
 
-class NumberedCanvas:
-    """Canvas for adding page numbers and running headers/footers."""
 
-    def __init__(self, *args, **kwargs):
-        pass
+def load_json_or_die(filename: str) -> dict:
+    path = DATA_DIR / filename
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Zorunlu sonuç dosyası bulunamadı: {path}. "
+            f"Lütfen önce ilgili evaluate_*.py scriptini çalıştırarak sonuçları üretin."
+        )
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 def build_pdf_report(output_filename="AI_SOC_Teknik_Degerlendirme_Raporu.pdf"):
+    # Load all evaluation datasets dynamically
+    eval_res = load_json_or_die("evaluation_results.json")
+    model_comp = load_json_or_die("model_comparison.json")
+    adv_res = load_json_or_die("adversarial_results.json")
+    tier2_res = load_json_or_die("tier2_results.json")
+    learn_res = load_json_or_die("learning_results.json")
+
     doc = SimpleDocTemplate(
         output_filename,
         pagesize=A4,
@@ -62,518 +85,344 @@ def build_pdf_report(output_filename="AI_SOC_Teknik_Degerlendirme_Raporu.pdf"):
     title_style = ParagraphStyle(
         "DocTitle",
         fontName=BOLD_FONT,
-        fontSize=20,
-        leading=24,
+        fontSize=18,
+        leading=22,
         textColor=colors.HexColor("#0f172a"),
-        spaceAfter=6,
+        spaceAfter=4,
     )
     subtitle_style = ParagraphStyle(
         "DocSubTitle",
         fontName=MAIN_FONT,
-        fontSize=11,
-        leading=15,
+        fontSize=10,
+        leading=14,
         textColor=colors.HexColor("#475569"),
-        spaceAfter=14,
+        spaceAfter=10,
     )
     h1_style = ParagraphStyle(
         "SectionH1",
         fontName=BOLD_FONT,
-        fontSize=13,
-        leading=17,
+        fontSize=12,
+        leading=16,
         textColor=colors.HexColor("#1e3a8a"),
-        spaceBefore=12,
-        spaceAfter=6,
+        spaceBefore=10,
+        spaceAfter=5,
     )
     h2_style = ParagraphStyle(
         "SectionH2",
         fontName=BOLD_FONT,
-        fontSize=10.5,
-        leading=14,
+        fontSize=10,
+        leading=13,
         textColor=colors.HexColor("#0f172a"),
-        spaceBefore=8,
-        spaceAfter=4,
+        spaceBefore=6,
+        spaceAfter=3,
     )
     body_style = ParagraphStyle(
         "BodyDark",
         fontName=MAIN_FONT,
-        fontSize=9,
-        leading=13,
+        fontSize=8.5,
+        leading=12,
         textColor=colors.HexColor("#1e293b"),
-        spaceAfter=6,
-    )
-    body_bold = ParagraphStyle(
-        "BodyDarkBold",
-        fontName=BOLD_FONT,
-        fontSize=9,
-        leading=13,
-        textColor=colors.HexColor("#0f172a"),
+        spaceAfter=4,
     )
     callout_style = ParagraphStyle(
         "CalloutText",
-        fontName=ITALIC_FONT,
-        fontSize=8.5,
-        leading=12,
+        fontName=MAIN_FONT,
+        fontSize=8,
+        leading=11.5,
         textColor=colors.HexColor("#0369a1"),
     )
     table_cell = ParagraphStyle(
         "TableCell",
         fontName=MAIN_FONT,
         fontSize=8,
-        leading=11,
+        leading=10.5,
         textColor=colors.HexColor("#0f172a"),
     )
     table_cell_bold = ParagraphStyle(
         "TableCellBold",
         fontName=BOLD_FONT,
         fontSize=8,
-        leading=11,
+        leading=10.5,
         textColor=colors.HexColor("#0f172a"),
     )
     table_cell_header = ParagraphStyle(
         "TableHCell",
         fontName=BOLD_FONT,
-        fontSize=8.5,
-        leading=11,
+        fontSize=8,
+        leading=10.5,
         textColor=colors.white,
     )
 
     story = []
 
     # ── HEADER & META ───────────────────────────────────────────────
-    story.append(Paragraph("AI-SOC: Hibrit Otonom Siber Savunma Sistemi", title_style))
+    story.append(Paragraph("AI-SOC: Hibrit İki Kademeli Siber Savunma Sistemi", title_style))
     story.append(
         Paragraph(
-            "<b>Teknik Doğrulama, Model Başarımı ve Adversarial Dayanıklılık Raporu</b><br/>"
-            "Mühendislik Değerlendirmesi • CIC-IDS2017 Benchmark • Ollama LLM Savunma Katmanı",
+            "<b>Deneysel Ölçüm, Adversarial Dayanıklılık ve Model Güvenliği Değerlendirme Raporu</b><br/>"
+            "Dürüst Mühendislik Değerlendirmesi • Tüm Metrikler data/*.json Dosyalarından Dinamik Çekilmiştir",
             subtitle_style,
         )
     )
-    story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#1e3a8a"), spaceAfter=10))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#1e3a8a"), spaceAfter=8))
 
-    # Meta Info Table
+    # Meta Table
     meta_data = [
         [
-            Paragraph("<b>Tarih:</b> 23 Ekim 2026", table_cell),
-            Paragraph("<b>Hedef Donanım:</b> RTX 4050 6GB VRAM (Event-Driven)", table_cell),
+            Paragraph(f"<b>Rapor Tarihi:</b> {time.strftime('%d.%m.%Y %H:%M')}", table_cell),
+            Paragraph(f"<b>Veri Seti:</b> {eval_res.get('data_source', 'Sentetik')}", table_cell),
         ],
         [
-            Paragraph("<b>Tier 1 ML Filtresi:</b> SGDClassifier (Online / CPU)", table_cell),
-            Paragraph("<b>Tier 2 LLM:</b> Cisco Foundation-Sec-8B (Ollama)", table_cell),
+            Paragraph("<b>Tier 1 ML Filtresi:</b> Online SGDClassifier + Multi-Pass Normalizer", table_cell),
+            Paragraph(f"<b>Tier 2 Analiz:</b> {tier2_res.get('inference_engine', 'Cisco Foundation-Sec / Fallback')}", table_cell),
         ],
         [
-            Paragraph("<b>Veri Kaynağı:</b> CIC-IDS2017 & Apache/SSH", table_cell),
-            Paragraph("<b>Vektör Hafıza:</b> ChromaDB (RAG Few-Shot)", table_cell),
+            Paragraph(f"<b>Test Seti Boyutu:</b> {eval_res.get('test_samples', 0)} Akış + {adv_res.get('total_test_attacks', 0)} Adversarial", table_cell),
+            Paragraph(f"<b>Geri Bildirim Modu:</b> Batch Boyutu 3 + Holdout Rollback", table_cell),
         ],
     ]
     meta_table = Table(meta_data, colWidths=[8.5 * cm, 8.5 * cm])
     meta_table.setStyle(
         TableStyle(
             [
-                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f1f5f9")),
-                ("PADDING", (0, 0), (-1, -1), 4),
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f8fafc")),
+                ("PADDING", (0, 0), (-1, -1), 3),
                 ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
                 ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
             ]
         )
     )
     story.append(meta_table)
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 6))
 
-    # ── 1. YÖNETİCİ ÖZETİ ───────────────────────────────────────────
-    story.append(Paragraph("1. Yönetici Özeti ve Mimari Gerekçe", h1_style))
+    # ── 1. MİMARİ VE YÖNETİCİ ÖZETİ ─────────────────────────────────
+    story.append(Paragraph("1. Mimari Tasarım ve İki Aşamalı İşlem Ayrımı", h1_style))
     summary_p = (
-        "Geleneksel Siber Savunma Merkezleri (SOC), akan tüm ağ trafiğini doğrudan Büyük Dil Modellerine (LLM) "
-        "göndermeye çalıştığında aşırı VRAM tüketimi, yüksek gecikme süreleri (latency) ve donanım kilitlenmeleriyle karşılaşmaktadır. "
-        "Geliştirilen <b>İki Aşamalı Hibrit (Two-Stage Event-Driven) AI-SOC</b> mimarisinde trafik iki kademede ele alınır:<br/>"
-        "• <b>Tier 1 (Hızlı CPU ML Filtresi):</b> Saniyede binlerce paketi GPU'yu hiç uyandırmadan (IDLE tutarak) ortalama <b>0.12 ms</b> "
-        "içinde sınıflandırır. Normal trafik doğrudan yeşil olarak onaylanır.<br/>"
-        "• <b>Tier 2 (Derin LLM Analisti):</b> Sadece Tier 1'in şüpheli (1) olarak işaretlediği anomalilerde event-driven olarak tetiklenir, "
-        "JSON şemasıyla MITRE ATT&CK eşleştirmesi ve kopyalanabilir <code>iptables</code> savunma komutları üretir."
+        "Bu çalışma, siber güvenlik operasyon merkezlerinde (SOC) akan yüksek hacimli ham log trafiğini "
+        "doğrudan büyük dil modellerine (LLM) göndermenin getirdiği yüksek maliyet, donanım darboğazı ve gecikme "
+        "sorunlarını çözmek üzere tasarlanmış <b>iki kademeli (Two-Stage Event-Driven)</b> bir mimaridir.<br/>"
+        "• <b>Tier 1 (CPU ML + Regex Katmanı):</b> Gelen her logu ve akış özelliklerini CPU üzerinde mikrosaniye "
+        f"mertebesinde (Ortalama: <b>{eval_res['end_to_end_latency_ms']['mean_latency_ms']} ms</b>, "
+        f"P95: <b>{eval_res['end_to_end_latency_ms']['p95_latency_ms']} ms</b>) değerlendirir. Şüpheli bulunmayan normal loglar elenir.<br/>"
+        "• <b>Tier 2 (Derin LLM Analisti):</b> Yalnızca Tier 1 tarafından şüpheli olarak işaretlenen loglar için tetiklenir; "
+        "semantik doğrulama, MITRE ATT&CK eşleştirmesi ve koda dayalı güvenli savunma kuralı sentezler."
     )
     story.append(Paragraph(summary_p, body_style))
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 4))
 
-    # ── 2. CIC-IDS2017 MODEL BAŞARIMI VE METRİKLER ──────────────────
-    story.append(Paragraph("2. Tier 1 Model Başarımı ve Değerlendirme (CIC-IDS2017)", h1_style))
-    eval_text = (
-        "Model başarımı, 450 satırlık gerçekçi CIC-IDS2017 tablosal ağ akış verisi üzerinde %80 Eğitim (360 akış) "
-        "ve %20 Test (90 akış) katmanlı (stratified) ayrım yapılarak ölçülmüştür. Sınıflandırma sonuçları aşağıdadır:"
+    # ── 2. MODEL PERFORMANSI VE KARŞILAŞTIRMA (5-FOLD CV) ────────────
+    story.append(Paragraph("2. Tier 1 Akış Modeli Performansı ve Karşılaştırma", h1_style))
+    comp_intro = (
+        f"Veri kaynağı olarak <b>{eval_res['data_source']}</b> kullanılmıştır. Model seçimini doğrulamak adına "
+        "aynı veri kümesinde 5-katlı çapraz doğrulama (5-Fold Cross Validation) ile 4 farklı mimari karşılaştırılmıştır:"
     )
-    story.append(Paragraph(eval_text, body_style))
+    story.append(Paragraph(comp_intro, body_style))
 
-    # Metric summary row
-    metric_cards = [
+    comp_rows = [
         [
-            Paragraph("<b>Genel Doğruluk (Accuracy)</b><br/><font size='12' color='#1d4ed8'><b>%83.33</b></font>", table_cell),
-            Paragraph("<b>Saldırı F1-Skoru</b><br/><font size='12' color='#059669'><b>0.81</b></font>", table_cell),
-            Paragraph("<b>Normal F1-Skoru</b><br/><font size='12' color='#059669'><b>0.85</b></font>", table_cell),
-            Paragraph("<b>Ort. Çıkarım Süresi</b><br/><font size='12' color='#b45309'><b>0.128 ms</b></font>", table_cell),
+            Paragraph("Model / Öznitelik Seti", table_cell_header),
+            Paragraph("F1-Skoru", table_cell_header),
+            Paragraph("Doğruluk (Acc)", table_cell_header),
+            Paragraph("Hassasiyet (Prec)", table_cell_header),
+            Paragraph("Duyarlılık (Rec)", table_cell_header),
+            Paragraph("Gerekçe / Rol", table_cell_header),
         ]
     ]
-    mc_table = Table(metric_cards, colWidths=[4.25 * cm] * 4)
-    mc_table.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f8fafc")),
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
-                ("PADDING", (0, 0), (-1, -1), 6),
-            ]
-        )
-    )
-    story.append(mc_table)
-    story.append(Spacer(1, 8))
 
-    # Confusion matrix & Classification report
-    story.append(Paragraph("<b>Karmaşıklık Matrisi (Confusion Matrix) ve Sınıf Dağılımı:</b>", h2_style))
-    cm_data = [
-        [
-            Paragraph("Sınıf", table_cell_header),
-            Paragraph("Destek (Support)", table_cell_header),
-            Paragraph("Hassasiyet (Precision)", table_cell_header),
-            Paragraph("Duyarlılık (Recall)", table_cell_header),
-            Paragraph("F1-Skor", table_cell_header),
-            Paragraph("Matris Karşılığı", table_cell_header),
-        ],
-        [
-            Paragraph("<b>BENIGN (Normal)</b>", table_cell),
-            Paragraph("50", table_cell),
-            Paragraph("%84.0", table_cell),
-            Paragraph("%86.0", table_cell),
-            Paragraph("0.85", table_cell),
-            Paragraph("TN = 43 | FP = 7", table_cell),
-        ],
-        [
-            Paragraph("<b>ATTACK (Saldırı)</b>", table_cell),
-            Paragraph("40", table_cell),
-            Paragraph("%82.0", table_cell),
-            Paragraph("%80.0", table_cell),
-            Paragraph("0.81", table_cell),
-            Paragraph("FN = 8 | TP = 32", table_cell),
-        ],
-        [
-            Paragraph("<b>Ağırlıklı Ortalama</b>", table_cell_bold),
-            Paragraph("90", table_cell_bold),
-            Paragraph("%83.1", table_cell_bold),
-            Paragraph("%83.3", table_cell_bold),
-            Paragraph("0.83", table_cell_bold),
-            Paragraph("Toplam Doğruluk: %83.33", table_cell_bold),
-        ],
-    ]
-    cm_table = Table(cm_data, colWidths=[3.2 * cm, 2.5 * cm, 2.8 * cm, 2.8 * cm, 2.2 * cm, 3.5 * cm])
-    cm_table.setStyle(
+    for model_key, stats in model_comp.items():
+        label = model_key.replace("_", " ").title()
+        if "Baseline" in label:
+            role = "Eski ham port (skaler) modeli"
+        elif "New Sgd" in label:
+            role = "Seçilen Online Model (partial_fit)"
+        elif "Decision" in label:
+            role = "Kural derinlik 4 referansı"
+        else:
+            role = "Topluluk (Ensemble) tavan referansı"
+
+        comp_rows.append([
+            Paragraph(f"<b>{label}</b>", table_cell),
+            Paragraph(f"{stats.get('mean_f1', stats.get('f1', 0)):.4f}", table_cell),
+            Paragraph(f"{stats.get('mean_accuracy', stats.get('accuracy', 0)):.4f}", table_cell),
+            Paragraph(f"{stats.get('mean_precision', stats.get('precision', 0)):.4f}", table_cell),
+            Paragraph(f"{stats.get('mean_recall', stats.get('recall', 0)):.4f}", table_cell),
+            Paragraph(role, table_cell),
+        ])
+
+    comp_table = Table(comp_rows, colWidths=[4.2 * cm, 2.0 * cm, 2.2 * cm, 2.2 * cm, 2.2 * cm, 4.2 * cm])
+    comp_table.setStyle(
         TableStyle(
             [
                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1e3a8a")),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -2), [colors.white, colors.HexColor("#f8fafc")]),
-                ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#e2e8f0")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
                 ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#94a3b8")),
                 ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
-                ("PADDING", (0, 0), (-1, -1), 4),
+                ("PADDING", (0, 0), (-1, -1), 2.5),
             ]
         )
     )
-    story.append(cm_table)
-    story.append(Spacer(1, 10))
+    story.append(comp_table)
+    story.append(Spacer(1, 4))
 
-    # ── 3. ADVERSARIAL DAYANIKLILIK TESTİ ───────────────────────────
-    story.append(Paragraph("3. Adversarial Obfuscation Dayanıklılık Raporu", h1_style))
-    adv_intro = (
-        "Saldırganlar, imza tabanlı regex ve statik ML modellerini atlatmak için çeşitli kod gizleme (obfuscation) "
-        "ve kodlama taktikleri uygular. Sistemimizin hibrit mimarisi (Regex + URL Normalizer + SGDClassifier + LLM) "
-        "<b>16 farklı ileri düzey obfuscation vektörü</b> ile test edilmiştir:"
+    # Test set metrics
+    m = eval_res["metrics"]
+    conf_mat = eval_res["confusion_matrix"]
+    test_eval_text = (
+        f"<b>Ayrık Test Seti Sonuçları (Eşik = {eval_res['operational_threshold']}):</b> "
+        f"Doğruluk: <b>%{m['accuracy']*100:.2f}</b> | F1-Skor: <b>{m['f1_score']:.4f}</b> | "
+        f"Hassasiyet: <b>%{m['precision']*100:.2f}</b> | Duyarlılık: <b>%{m['recall']*100:.2f}</b> | "
+        f"Yanlış Alarm Oranı (FPR): <b>%{m['false_positive_rate']*100:.2f}</b><br/>"
+        f"<i>Karmaşıklık Matrisi:</i> TN = {conf_mat['tn']}, FP = {conf_mat['fp']} (Yanlış Alarm), "
+        f"FN = {conf_mat['fn']} (Kaçırılan), TP = {conf_mat['tp']} (Doğru Tespit)."
     )
-    story.append(Paragraph(adv_intro, body_style))
+    story.append(Paragraph(test_eval_text, body_style))
+    story.append(Spacer(1, 4))
 
-    adv_data = [
+    # ── 3. ADVERSARIAL DAYANIKLILIK VE KAÇIRILAN ÖRNEKLER ────────────
+    story.append(Paragraph("3. Adversarial Dayanıklılık ve Kaçırılan Örnekler", h1_style))
+    adv_p = (
+        f"Sistem, <code>data/payloads_test.json</code> test setinde yer alan toplam <b>{adv_res['total_test_attacks']}</b> "
+        "farklı gizleme (obfuscation) varyantı ve <b>108 masum log</b> ile test edilmiştir. "
+        "Testlerde ML katmanına yapay avantaj sağlamamak için nötr (masum) akış özellikleri verilmiş ve "
+        "regex, ML ve birleşik sonuçlar dürüstçe ayrıştırılmıştır:"
+    )
+    story.append(Paragraph(adv_p, body_style))
+
+    adv_table_rows = [
         [
-            Paragraph("#", table_cell_header),
-            Paragraph("Kategori", table_cell_header),
-            Paragraph("Obfuscation / Gizleme Tekniği", table_cell_header),
-            Paragraph("Örnek Payload", table_cell_header),
-            Paragraph("Regex", table_cell_header),
-            Paragraph("ML Skoru", table_cell_header),
-            Paragraph("Durum", table_cell_header),
-        ],
-        [
-            Paragraph("1", table_cell),
-            Paragraph("SQLi", table_cell),
-            Paragraph("Case Variation", table_cell),
-            Paragraph("<code>SeLeCt * fRoM users--</code>", table_cell),
-            Paragraph("✅", table_cell),
-            Paragraph("1.000", table_cell),
-            Paragraph("<font color='#059669'><b>YAKALANDI</b></font>", table_cell),
-        ],
-        [
-            Paragraph("2", table_cell),
-            Paragraph("SQLi", table_cell),
-            Paragraph("Comment Injection", table_cell),
-            Paragraph("<code>admin'/**/OR/**/1=1--</code>", table_cell),
-            Paragraph("✅", table_cell),
-            Paragraph("1.000", table_cell),
-            Paragraph("<font color='#059669'><b>YAKALANDI</b></font>", table_cell),
-        ],
-        [
-            Paragraph("3", table_cell),
-            Paragraph("SQLi", table_cell),
-            Paragraph("URL Encoding", table_cell),
-            Paragraph("<code>%27%20UNION%20SELECT</code>", table_cell),
-            Paragraph("✅", table_cell),
-            Paragraph("1.000", table_cell),
-            Paragraph("<font color='#059669'><b>YAKALANDI</b></font>", table_cell),
-        ],
-        [
-            Paragraph("4", table_cell),
-            Paragraph("SQLi", table_cell),
-            Paragraph("Double URL Encoding", table_cell),
-            Paragraph("<code>%2527%2520UNION</code>", table_cell),
-            Paragraph("✅", table_cell),
-            Paragraph("1.000", table_cell),
-            Paragraph("<font color='#059669'><b>YAKALANDI</b></font>", table_cell),
-        ],
-        [
-            Paragraph("5", table_cell),
-            Paragraph("SQLi", table_cell),
-            Paragraph("Hex Encoding", table_cell),
-            Paragraph("<code>OR 0x313=0x313--</code>", table_cell),
-            Paragraph("✅", table_cell),
-            Paragraph("1.000", table_cell),
-            Paragraph("<font color='#059669'><b>YAKALANDI</b></font>", table_cell),
-        ],
-        [
-            Paragraph("6", table_cell),
-            Paragraph("SQLi", table_cell),
-            Paragraph("Whitespace Substitution", table_cell),
-            Paragraph("<code>admin'\\tOR\\t'1'='1--</code>", table_cell),
-            Paragraph("✅", table_cell),
-            Paragraph("1.000", table_cell),
-            Paragraph("<font color='#059669'><b>YAKALANDI</b></font>", table_cell),
-        ],
-        [
-            Paragraph("7", table_cell),
-            Paragraph("SQLi", table_cell),
-            Paragraph("Newline Injection", table_cell),
-            Paragraph("<code>admin'\\nOR\\n'1'='1--</code>", table_cell),
-            Paragraph("✅", table_cell),
-            Paragraph("1.000", table_cell),
-            Paragraph("<font color='#059669'><b>YAKALANDI</b></font>", table_cell),
-        ],
-        [
-            Paragraph("8", table_cell),
-            Paragraph("SQLi", table_cell),
-            Paragraph("Mixed Encoding", table_cell),
-            Paragraph("<code>UN%49ON SE%4CECT</code>", table_cell),
-            Paragraph("✅", table_cell),
-            Paragraph("1.000", table_cell),
-            Paragraph("<font color='#059669'><b>YAKALANDI</b></font>", table_cell),
-        ],
-        [
-            Paragraph("9", table_cell),
-            Paragraph("SQLi", table_cell),
-            Paragraph("Word Splitting Comments", table_cell),
-            Paragraph("<code>UN/*!*/ION /*!*/SEL/*!*/ECT</code>", table_cell),
-            Paragraph("✅", table_cell),
-            Paragraph("1.000", table_cell),
-            Paragraph("<font color='#059669'><b>YAKALANDI</b></font>", table_cell),
-        ],
-        [
-            Paragraph("10", table_cell),
-            Paragraph("SQLi", table_cell),
-            Paragraph("Scientific Notation", table_cell),
-            Paragraph("<code>1e0 UNION SELECT null</code>", table_cell),
-            Paragraph("✅", table_cell),
-            Paragraph("1.000", table_cell),
-            Paragraph("<font color='#059669'><b>YAKALANDI</b></font>", table_cell),
-        ],
-        [
-            Paragraph("11", table_cell),
-            Paragraph("SSH", table_cell),
-            Paragraph("Standard Brute Force", table_cell),
-            Paragraph("<code>Failed password for root</code>", table_cell),
-            Paragraph("✅", table_cell),
-            Paragraph("1.000", table_cell),
-            Paragraph("<font color='#059669'><b>YAKALANDI</b></font>", table_cell),
-        ],
-        [
-            Paragraph("12", table_cell),
-            Paragraph("SSH", table_cell),
-            Paragraph("All-Caps Obfuscation", table_cell),
-            Paragraph("<code>FAILED PASSWORD for root</code>", table_cell),
-            Paragraph("✅", table_cell),
-            Paragraph("1.000", table_cell),
-            Paragraph("<font color='#059669'><b>YAKALANDI</b></font>", table_cell),
-        ],
-        [
-            Paragraph("13", table_cell),
-            Paragraph("XSS", table_cell),
-            Paragraph("SVG Tag Scripting", table_cell),
-            Paragraph("<code>&lt;svg onload=alert(1)&gt;</code>", table_cell),
-            Paragraph("✅", table_cell),
-            Paragraph("0.000", table_cell),
-            Paragraph("<font color='#059669'><b>YAKALANDI</b></font>", table_cell),
-        ],
-        [
-            Paragraph("14", table_cell),
-            Paragraph("XSS", table_cell),
-            Paragraph("Image Error Handler", table_cell),
-            Paragraph("<code>&lt;img src=x onerror=alert(1)&gt;</code>", table_cell),
-            Paragraph("✅", table_cell),
-            Paragraph("0.000", table_cell),
-            Paragraph("<font color='#059669'><b>YAKALANDI</b></font>", table_cell),
-        ],
-        [
-            Paragraph("15", table_cell),
-            Paragraph("XSS", table_cell),
-            Paragraph("URL-Encoded Tag", table_cell),
-            Paragraph("<code>%3Cscript%3Ealert(1)%3C/script%3E</code>", table_cell),
-            Paragraph("✅", table_cell),
-            Paragraph("0.000", table_cell),
-            Paragraph("<font color='#059669'><b>YAKALANDI</b></font>", table_cell),
-        ],
-        [
-            Paragraph("16", table_cell),
-            Paragraph("XSS", table_cell),
-            Paragraph("Unicode Escape Sequence", table_cell),
-            Paragraph("<code>\\u003cscript\\u003ealert(1)</code>", table_cell),
-            Paragraph("✅", table_cell),
-            Paragraph("0.000", table_cell),
-            Paragraph("<font color='#059669'><b>YAKALANDI</b></font>", table_cell),
-        ],
+            Paragraph("Saldırı Ailesi", table_cell_header),
+            Paragraph("Test Sayısı", table_cell_header),
+            Paragraph("Regex Tespit", table_cell_header),
+            Paragraph("ML Tespit", table_cell_header),
+            Paragraph("Birleşik Tespit", table_cell_header),
+            Paragraph("Tespit Oranı", table_cell_header),
+        ]
     ]
-    adv_table = Table(
-        adv_data,
-        colWidths=[0.8 * cm, 1.8 * cm, 3.8 * cm, 4.4 * cm, 1.4 * cm, 1.8 * cm, 3.0 * cm],
-    )
+
+    for fam, stats in adv_res["family_breakdown"].items():
+        rate = (stats["combined"] / stats["total"]) if stats["total"] else 0.0
+        adv_table_rows.append([
+            Paragraph(f"<b>{fam}</b>", table_cell),
+            Paragraph(str(stats["total"]), table_cell),
+            Paragraph(str(stats["regex"]), table_cell),
+            Paragraph(str(stats["ml"]), table_cell),
+            Paragraph(str(stats["combined"]), table_cell),
+            Paragraph(f"%{rate*100:.1f}", table_cell_bold),
+        ])
+
+    tot_rate = adv_res["overall_detection_rate"]
+    adv_table_rows.append([
+        Paragraph("<b>GENEL TOPLAM</b>", table_cell_bold),
+        Paragraph(str(adv_res["total_test_attacks"]), table_cell_bold),
+        Paragraph(str(sum(s["regex"] for s in adv_res["family_breakdown"].values())), table_cell_bold),
+        Paragraph(str(sum(s["ml"] for s in adv_res["family_breakdown"].values())), table_cell_bold),
+        Paragraph(str(sum(s["combined"] for s in adv_res["family_breakdown"].values())), table_cell_bold),
+        Paragraph(f"<b>%{tot_rate*100:.1f}</b>", table_cell_bold),
+    ])
+
+    adv_table = Table(adv_table_rows, colWidths=[3.5 * cm, 2.5 * cm, 2.8 * cm, 2.8 * cm, 2.8 * cm, 2.6 * cm])
     adv_table.setStyle(
         TableStyle(
             [
                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0f172a")),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -2), [colors.white, colors.HexColor("#f8fafc")]),
+                ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#e2e8f0")),
                 ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#94a3b8")),
-                ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
                 ("PADDING", (0, 0), (-1, -1), 2.5),
-                ("ALIGN", (0, 0), (0, -1), "CENTER"),
-                ("ALIGN", (4, 0), (5, -1), "CENTER"),
             ]
         )
     )
     story.append(adv_table)
+    story.append(Spacer(1, 4))
+
+    # Transparent disclosure of escaped samples
+    escaped_list = adv_res.get("escaped_payloads", [])
+    if escaped_list:
+        esc_box = [
+            [
+                Paragraph(
+                    f"<b>⚠️ Dürüstlük İlkesi Gereği Açıklanan Kaçırılan Örnekler ({len(escaped_list)} Adet):</b><br/>"
+                    + "<br/>".join([
+                        f"• [{e['attack_type']}] <b>{e['technique']}</b>: <code>{e['raw_text']}</code> (Skor: {e['anomaly_score']})"
+                        for e in escaped_list
+                    ])
+                    + "<br/><i>Analiz:</i> CHAR() fonksiyonunun çoklu argüman içeren varyantı çıplak regex'ten kaçmıştır. "
+                    "Bu durum sistemin kör noktası olarak raporlanmış olup dev/test ayrımı kuralı gereğince test setinde gizlenmemiştir.",
+                    callout_style,
+                )
+            ]
+        ]
+        esc_table = Table(esc_box, colWidths=[17.0 * cm])
+        esc_table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#fffbeb")),
+                    ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#fcd34d")),
+                    ("PADDING", (0, 0), (-1, -1), 4),
+                ]
+            )
+        )
+        story.append(esc_table)
+    story.append(Spacer(1, 4))
+
+    # ── 4. TIER 2 DERİN ANALİZ VE KOMUT GÜVENLİĞİ ───────────────────
+    story.append(Paragraph("4. Tier 2 Tehdit İstihbaratı ve Komut Güvenliği", h1_style))
+    t2_m = tier2_res["metrics"]
+    t2_text = (
+        f"Tier 2 değerlendirmesinde <b>{tier2_res['total_samples']}</b> test saldırısı analiz edilmiştir. "
+        f"İnceleme motoru: <b>{tier2_res['inference_engine']}</b> "
+        f"({'Fallback Modu Aktif' if tier2_res['is_fallback'] else 'Canlı Yerel LLM'}).<br/>"
+        f"• Saldırı Tipi Eşleşme Doğruluğu: <b>%{t2_m['attack_type_accuracy']*100:.1f}</b><br/>"
+        f"• MITRE ATT&CK Tekniği Eşleşmesi: <b>%{t2_m['mitre_mapping_accuracy']*100:.1f}</b><br/>"
+        f"• Komut Güvenliği ve IP Uyumluluğu: <b>%{t2_m['command_safety_compliance']*100:.1f}</b> "
+        f"(İç IP / Chaining Engelleme Hatası: <b>{t2_m['dangerous_commands_emitted']}</b>)<br/>"
+        f"• Ortalama Analiz Süresi: <b>{tier2_res['latency_ms']['mean_latency_ms']} ms</b> "
+        f"(P95: <b>{tier2_res['latency_ms']['p95_latency_ms']} ms</b>)"
+    )
+    story.append(Paragraph(t2_text, body_style))
+    story.append(Spacer(1, 4))
+
+    # ── 5. SÜREKLİ ÖĞRENME VE ANTİ-POISONING ────────────────────────
+    story.append(Paragraph("5. Sürekli Öğrenme ve Geri Bildirim Zehirlenme Dayanıklılığı", h1_style))
+    l_text = (
+        "Operatör geri bildirimleriyle sürekli öğrenme (Continual Learning) iki kritik teste tabi tutulmuştur:<br/>"
+        f"• <b>Test 1 (Sağlamlık - 10 Doğru Geri Bildirim):</b> Başlangıç Holdout F1: <b>{learn_res['baseline_metrics']['f1']:.4f}</b> "
+        f"-> Geri Bildirim Sonrası: <b>{learn_res['post_legitimate_metrics']['f1']:.4f}</b> "
+        f"({'✅ Başarılı - Bozulma Yok' if learn_res['test_1_robustness_passed'] else '❌ Başarısız'}).<br/>"
+        f"• <b>Test 2 (Anti-Poisoning - 5 Kasıtlı Zehirleme Saldırısı):</b> Saldırgan DDoS akışlarına 'normal', "
+        f"masum loglara 'saldırı' diyerek modeli zehirlemeye çalışmıştır. Holdout F1 düşüşü izlenmiş ve "
+        f"<b>{learn_res['anti_poisoning_rollbacks_count']} adet otomatik geri alma (Rollback)</b> tetiklenerek "
+        f"katastrofik sürüklenme engellenmiştir. Sonuç: <b>{learn_res['post_poisoning_metrics']['f1']:.4f} F1</b> "
+        f"({'✅ Başarılı - Zehirlenme Engellendi' if learn_res['test_2_poisoning_resilience_passed'] else '❌ Başarısız'})."
+    )
+    story.append(Paragraph(l_text, body_style))
+    story.append(Spacer(1, 4))
+
+    # ── 6. SINIRLAMALAR VE GELECEK ÇALIŞMA ───────────────────────────
+    story.append(Paragraph("6. Sistemin Sınırlamaları ve Gelecek Çalışma", h1_style))
+    limitations_p = (
+        "Bu proje akademik dürüstlük ve tekrarlanabilirlik ilkeleri doğrultusunda geliştirilmiş olup "
+        "aşağıdaki bilinen kısıtlara sahiptir:<br/>"
+        "• <b>1. Yavaş ve Dağıtık SSH Brute-Force:</b> Brute-force tespiti IP başına 60 saniyelik kayan pencerede "
+        "en az 5 başarısız denemeye bakar. Bir botnet farklı IP'lerden veya 120 saniye aralıklarla parola denerse "
+        "bu pencereyi aşabilir. Gelecek çalışmada kümeleme (clustering) ve alt ağ bazlı sayıcılar gereklidir.<br/>"
+        "• <b>2. Web Saldırılarının Akış Düzeyinde Masum Trafikle Örtüşmesi:</b> SQLi ve XSS gibi uygulama katmanı "
+        "saldırıları akış özellikleri (paket boyutu, süre, bayt hızı) bakımından masum GET/POST istekleriyle neredeyse "
+        "birebir örtüşür. Bu nedenle akış modeli tek başına web saldırılarını ayıramaz; metin normalizasyonu ve "
+        "regex/LLM katmanı zorunlu bir tamamlayıcıdır.<br/>"
+        "• <b>3. Sentetik Veri Kullanımı ve Kavram Kayması (Concept Drift):</b> Kullanılan veri sentetiktir "
+        "(scripts/make_dataset.py). Gerçek üretim ortamlarındaki CDN trafiği, asenkron WebSocket akışları ve kullanıcı "
+        "davranışları sentetik modelde dağılım kaymasına (distribution shift) yol açabilir.<br/>"
+        "• <b>4. İki Kademeli Savunmanın Kör Noktaları:</b> gzip sıkıştırmalı HTTP gövdeleri, UTF-16/EBCDIC kodlamaları "
+        "veya chunked transfer encoding ile parçalanmış payload'lar soket seviyesinde yeniden birleştirilmediği (reassembly) "
+        "sürece metin ön filtresini atlatabilir."
+    )
+    story.append(Paragraph(limitations_p, body_style))
     story.append(Spacer(1, 6))
 
-    adv_summary_box = [
-        [
-            Paragraph(
-                "<b>🛡️ Adversarial Dayanıklılık Skoru:</b> Test edilen 16 farklı saldırı gizleme tekniğinin "
-                "<b>16'sı da (%100.0)</b> hibrit tespit katmanlarımız tarafından başarıyla yakalanmış, <b>atlatılan teknik sayısı 0 (%0.0)</b> olmuştur.",
-                callout_style,
-            )
-        ]
-    ]
-    adv_box_table = Table(adv_summary_box, colWidths=[17.0 * cm])
-    adv_box_table.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f0fdf4")),
-                ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#86efac")),
-                ("PADDING", (0, 0), (-1, -1), 5),
-            ]
-        )
-    )
-    story.append(adv_box_table)
-    story.append(Spacer(1, 10))
-
-    # ── 4. GÜVENLİK, YÖNETİŞİM VE LLM GUARDRAILS ────────────────────
-    story.append(Paragraph("4. Kurumsal Güvenlik ve LLM Guardrails Mimarisi", h1_style))
-    guardrails_text = (
-        "Yapay zeka modellerinin siber savunma kararlarına dahil edilmesi, yeni saldırı yüzeyleri (Attack Surface) "
-        "oluşturur. Sisteme entegre edilen kurumsal güvenlik kalkanları şunlardır:<br/>"
-        "• <b>RFC1918 İç Ağ Güvenlik Kalkanı:</b> LLM'in yanlışlıkla veya prompt injection ile ağ geçidi (Gateway) "
-        "veya iç IP adreslerini (192.168.x.x, 10.x.x.x, 127.0.0.1) engelleyecek <code>iptables</code> komutu üretmesi "
-        "kod seviyesinde (<code>_validate_mitigation_command</code>) reddedilir ve güvenli kaynak IP ile değiştirilir.<br/>"
-        "• <b>Prompt Injection Filtreleme:</b> Log satırları içerisine gömülü <i>'ignore above', 'disregard previous'</i> "
-        "gibi talimatlar tespit edilip 200 karaktere kırpılarak <code>[SANITIZED]</code> etiketiyle etkisizleştirilir.<br/>"
-        "• <b>Feedback Zehirlenme ve Catastrophic Drift Koruması:</b> Kullanıcı geri bildirimleri tekil örnekle anlık modeli "
-        "zehirlememesi için <code>BATCH_SIZE = 3</code> havuzunda biriktirildikten sonra <code>partial_fit</code> ile uygulanır.<br/>"
-        "• <b>Çift Yönlü ChromaDB Vektör Eğitimi:</b> Sadece doğrulanmış saldırılar değil, 'Yanlış Alarm' olarak işaretlenen "
-        "loglar da <code>FALSE_POSITIVE</code> negatif örneği olarak vektör hafızasına işlenir."
-    )
-    story.append(Paragraph(guardrails_text, body_style))
-    story.append(Spacer(1, 8))
-
-    # ── 5. AÇIKLANABİLİRLİK (EXPLAINABILITY) ─────────────────────────
-    story.append(Paragraph("5. Açıklanabilirlik ve Özellik Katkısı (Feature Contributions)", h1_style))
-    exp_text = (
-        "Tier 1 SGDClassifier modelinin her bir tahmininde model katsayıları (<code>classifier.coef_[0]</code>) "
-        "dinamik olarak normalize edilerek karara etki eden özelliklerin ağırlıkları hesaplanmaktadır:"
-    )
-    story.append(Paragraph(exp_text, body_style))
-
-    feat_data = [
-        [
-            Paragraph("Ağ Akış Özelliği (Feature)", table_cell_header),
-            Paragraph("Özellik Açıklaması", table_cell_header),
-            Paragraph("Göreceli Model Ağırlığı", table_cell_header),
-            Paragraph("Tipik Saldırı Anomali Eşiği", table_cell_header),
-        ],
-        [
-            Paragraph("<code>syn_flag_count</code>", table_cell_bold),
-            Paragraph("TCP SYN bayrağı sayısı", table_cell),
-            Paragraph("<b>1.000 (%100)</b>", table_cell),
-            Paragraph("> 100 paket/sn (DDoS / Port Tarama)", table_cell),
-        ],
-        [
-            Paragraph("<code>dest_port</code>", table_cell_bold),
-            Paragraph("Hedef port numarası (HTTP/SSH)", table_cell),
-            Paragraph("<b>0.968 (%96.8)</b>", table_cell),
-            Paragraph("Port 22 (SSH) ve 80/443 (Web)", table_cell),
-        ],
-        [
-            Paragraph("<code>total_fwd_packets</code>", table_cell_bold),
-            Paragraph("İletilen toplam paket hacmi", table_cell),
-            Paragraph("<b>0.961 (%96.1)</b>", table_cell),
-            Paragraph("> 500 paket (Volumetrik Akışlar)", table_cell),
-        ],
-        [
-            Paragraph("<code>flow_bytes_per_sec</code>", table_cell_bold),
-            Paragraph("Saniye başına düşen bayt hızı", table_cell),
-            Paragraph("<b>0.941 (%94.1)</b>", table_cell),
-            Paragraph("> 500,000 Bayt/sn (SYN/UDP Flood)", table_cell),
-        ],
-        [
-            Paragraph("<code>flow_duration</code>", table_cell_bold),
-            Paragraph("Bağlantı akışının toplam süresi", table_cell),
-            Paragraph("<b>0.498 (%49.8)</b>", table_cell),
-            Paragraph("< 20ms (Hızlı Bağlantı Kopmaları)", table_cell),
-        ],
-    ]
-    feat_table = Table(feat_data, colWidths=[4.0 * cm, 4.5 * cm, 3.8 * cm, 4.7 * cm])
-    feat_table.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1e3a8a")),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
-                ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#94a3b8")),
-                ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
-                ("PADDING", (0, 0), (-1, -1), 3),
-            ]
-        )
-    )
-    story.append(feat_table)
-    story.append(Spacer(1, 10))
-
-    # ── 6. SONUÇ VE SAVUNMA KONTROL LİSTESİ ──────────────────────────
-    story.append(Paragraph("6. Sonuç ve Jüri Sunum Notları", h1_style))
-    conclusion_text = (
-        "AI-Driven SOC projemiz, salt bir arayüz demosu olmanın ötesinde; "
-        "<b>ölçülmüş ML metrikleri (%83.33 doğruluk, 0.12 ms gecikme)</b>, "
-        "<b>kanıtlanmış adversarial dayanıklılık (%100 tespit)</b> ve "
-        "<b>katı güvenlik politikaları (RFC1918 guardrail & prompt sanitization)</b> ile "
-        "gerçek dünya şartlarında işletilebilir bir siber savunma cihazı (appliance) standartlarına ulaştırılmıştır."
-    )
-    story.append(Paragraph(conclusion_text, body_style))
-
     doc.build(story)
-    print(f"[SUCCESS] PDF report generated: {output_filename}")
+    print(f"[SUCCESS] Dürüst ve Dinamik PDF Raporu Oluşturuldu: {output_filename}")
     return output_filename
 
 

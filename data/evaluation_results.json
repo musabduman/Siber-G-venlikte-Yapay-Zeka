@@ -1,51 +1,82 @@
 {
-  "dataset": {
-    "total_samples": 450,
-    "normal_count": 250,
-    "attack_count": 200,
-    "train_size": 360,
-    "test_size": 90,
-    "noise_ratio": 0.2,
-    "random_seed": 42
+  "timestamp": 1792791161.6949863,
+  "data_source": "Sentetik (CIC-IDS2017 Benzeri, scripts/make_dataset.py)",
+  "is_synthetic": true,
+  "operational_threshold": 0.65,
+  "train_samples": 1024,
+  "test_samples": 256,
+  "confusion_matrix": {
+    "tn": 160,
+    "fp": 0,
+    "fn": 7,
+    "tp": 89
   },
-  "model": {
-    "type": "SGDClassifier",
-    "loss": "log_loss",
-    "penalty": "l2",
-    "alpha": 0.0001
+  "metrics": {
+    "accuracy": 0.9727,
+    "precision": 1.0,
+    "recall": 0.9271,
+    "f1_score": 0.9622,
+    "false_positive_rate": 0.0
   },
-  "confusion_matrix": [
-    [
-      43,
-      7
-    ],
-    [
-      8,
-      32
-    ]
-  ],
-  "per_class": {
-    "Normal": {
-      "precision": 0.8431,
-      "recall": 0.86,
-      "f1_score": 0.8515,
-      "support": 50
+  "pr_curve_sample": [
+    {
+      "threshold": 0.0,
+      "precision": 0.375,
+      "recall": 1.0
     },
-    "Attack": {
-      "precision": 0.8205,
-      "recall": 0.8,
-      "f1_score": 0.8101,
-      "support": 40
+    {
+      "threshold": 0.014,
+      "precision": 0.416,
+      "recall": 1.0
+    },
+    {
+      "threshold": 0.026,
+      "precision": 0.468,
+      "recall": 1.0
+    },
+    {
+      "threshold": 0.042,
+      "precision": 0.536,
+      "recall": 1.0
+    },
+    {
+      "threshold": 0.089,
+      "precision": 0.627,
+      "recall": 1.0
+    },
+    {
+      "threshold": 0.121,
+      "precision": 0.75,
+      "recall": 1.0
+    },
+    {
+      "threshold": 0.248,
+      "precision": 0.941,
+      "recall": 1.0
+    },
+    {
+      "threshold": 0.839,
+      "precision": 1.0,
+      "recall": 0.792
+    },
+    {
+      "threshold": 1.0,
+      "precision": 1.0,
+      "recall": 0.521
+    },
+    {
+      "threshold": 1.0,
+      "precision": 1.0,
+      "recall": 0.25
     }
-  },
-  "overall": {
-    "accuracy": 0.8333,
-    "macro_avg_precision": 0.8318,
-    "macro_avg_recall": 0.83,
-    "macro_avg_f1": 0.8308
-  },
-  "inference": {
-    "n_runs": 1000,
-    "avg_ms_per_sample": 0.127952
+  ],
+  "end_to_end_latency_ms": {
+    "mean_latency_ms": 0.182,
+    "median_latency_ms": 0.139,
+    "p95_latency_ms": 0.386,
+    "p99_latency_ms": 1.02,
+    "min_latency_ms": 0.125,
+    "max_latency_ms": 2.443,
+    "samples_tested": 1000
   }
 }
