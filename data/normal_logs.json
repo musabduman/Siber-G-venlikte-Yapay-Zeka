@@ -1,0 +1,59 @@
+{
+  "normal_traffic": [
+    {
+      "source": "Apache-HTTP",
+      "port": 80,
+      "protocol": "TCP",
+      "templates": [
+        "GET /index.html HTTP/1.1 200 4520 Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "GET /static/css/main.css HTTP/1.1 200 1205 Chrome/120.0.0.0",
+        "GET /static/js/bundle.min.js HTTP/1.1 304 0 Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+        "POST /api/telemetry HTTP/1.1 204 0 Python-requests/2.31.0",
+        "GET /favicon.ico HTTP/1.1 200 1150 Mozilla/5.0",
+        "GET /about-us HTTP/1.1 200 6820 Safari/537.36",
+        "GET /assets/images/logo.png HTTP/1.1 200 24102 Mozilla/5.0"
+      ],
+      "flow_features": {
+        "dest_port": 80,
+        "flow_duration": 120,
+        "total_fwd_packets": 4,
+        "flow_bytes_per_sec": 450.0,
+        "syn_flag_count": 1
+      }
+    },
+    {
+      "source": "SSH-Auth",
+      "port": 22,
+      "protocol": "TCP",
+      "templates": [
+        "sshd[12450]: Accepted publickey for devops from {src_ip} port {src_port} ssh2: RSA SHA256:abc123xyz",
+        "sshd[12455]: session opened for user devops by (uid=0)",
+        "sshd[12490]: Received disconnect from {src_ip} port {src_port}:11: disconnected by user",
+        "sshd[12491]: session closed for user devops"
+      ],
+      "flow_features": {
+        "dest_port": 22,
+        "flow_duration": 45000,
+        "total_fwd_packets": 240,
+        "flow_bytes_per_sec": 310.0,
+        "syn_flag_count": 1
+      }
+    },
+    {
+      "source": "CIC-IDS2017",
+      "port": 443,
+      "protocol": "TCP",
+      "templates": [
+        "FLOW_LOG: Clean TLS session handshake complete with edge CDN",
+        "FLOW_LOG: Outbound secure API sync to payment gateway 200 OK"
+      ],
+      "flow_features": {
+        "dest_port": 443,
+        "flow_duration": 1500,
+        "total_fwd_packets": 12,
+        "flow_bytes_per_sec": 2400.0,
+        "syn_flag_count": 1
+      }
+    }
+  ]
+}
