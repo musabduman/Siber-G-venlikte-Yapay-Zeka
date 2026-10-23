@@ -22,6 +22,8 @@ logger = logging.getLogger("AI_SOC.Pipeline")
 
 
 class SOCPipeline:
+    BATCH_SIZE: int = 3
+
     def __init__(
         self,
         streamer: Optional[LogStreamer] = None,
@@ -44,6 +46,9 @@ class SOCPipeline:
         self.active_threats: Deque[Tuple[LogEntry, ThreatAnalysisResult]] = deque(maxlen=50)
         self.log_history_map: Dict[str, Tuple[LogEntry, Optional[ThreatAnalysisResult]]] = {}
         self.incident_ledger: List[Dict[str, Any]] = []
+
+        # Feedback batching for online learning
+        self._feedback_batch: list = []
 
         # Enterprise SOC Metrics
         self.total_inspected_logs: int = 0
@@ -151,7 +156,8 @@ class SOCPipeline:
                 "recent_logs": list(self.recent_logs),
                 "active_threats": list(self.active_threats),
                 "incident_ledger": list(self.incident_ledger),
-                "memory_count": self.memory.get_total_memory_count()
+                "memory_count": self.memory.get_total_memory_count(),
+                "feature_importance": self.pre_filter.get_feature_importance()
             }
 
     def reset_all(self):
@@ -180,8 +186,9 @@ class SOCPipeline:
     def submit_feedback(self, log_id: str, is_true_attack: bool, corrected_attack_type: Optional[str] = None) -> Dict[str, Any]:
         """
         Continual Learning Feedback Loop (Stage 5):
+        - Batches feedback samples; calls partial_fit only when BATCH_SIZE (3) samples accumulate.
         - Updates ChromaDB RAG vector memory if verified as genuine threat.
-        - Triggers online partial_fit on CPU SGDClassifier model in milliseconds.
+        - Stores false positives as negative examples in ChromaDB.
         """
         with self._lock:
             record = self.log_history_map.get(log_id)
@@ -191,8 +198,20 @@ class SOCPipeline:
 
         entry, analysis = record
 
-        # 1. Update ML Pre-Filter via partial_fit
-        update_ms = self.pre_filter.update_model_online(entry, is_true_attack=is_true_attack)
+        # 1. Batch feedback; only call partial_fit when batch is full
+        update_ms = 0.0
+        batch_pending = False
+        with self._lock:
+            self._feedback_batch.append((entry, is_true_attack))
+            if len(self._feedback_batch) >= self.BATCH_SIZE:
+                # Flush the batch: fit on all accumulated samples
+                for batch_entry, batch_label in self._feedback_batch:
+                    update_ms = self.pre_filter.update_model_online(batch_entry, is_true_attack=batch_label)
+                self._feedback_batch.clear()
+                logger.info(f"Feedback batch flushed ({self.BATCH_SIZE} samples) — partial_fit executed.")
+            else:
+                batch_pending = True
+                logger.info(f"Feedback batch pending: {len(self._feedback_batch)}/{self.BATCH_SIZE} samples collected.")
 
         with self._lock:
             # Remove the resolved incident from active queue so it disappears from the dashboard
@@ -218,10 +237,22 @@ class SOCPipeline:
                 result=analysis
             )
 
+        # 3. If false positive, store as negative example in ChromaDB
+        if not is_true_attack:
+            self.memory.store_negative_example(
+                log_id=entry.id,
+                raw_log=entry.raw_text,
+                analyst_note="False Positive — analyst marked as benign"
+            )
+
         logger.info(f"Feedback submitted for log {log_id}: is_attack={is_true_attack}, update_time={update_ms}ms")
-        return {
+        result = {
             "success": True,
             "learned_count": self.learned_threats_count,
             "update_latency_ms": update_ms,
             "vector_memory_total": self.memory.get_total_memory_count()
         }
+        if batch_pending:
+            result["batch_pending"] = True
+            result["pending_count"] = len(self._feedback_batch)
+        return result

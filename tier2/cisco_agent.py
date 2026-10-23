@@ -35,6 +35,7 @@ JSON ŞEMASI:
   "summary": "Tek cümlelik Türkçe teknik açıklama",
   "mitigation_command": "Saldırgan IP'yi engelleyen doğrudan çalıştırılabilir Linux iptables veya WAF komutu"
 }
+GÜVENLİK NOTU: mitigation_command'de SADECE saldırgan IP'yi ({ip_src}) kullan. İç ağ IP'lerini (192.168.x.x, 10.x.x.x) ASLA engelleme.
 """
 
     def __init__(self, memory: Optional[VectorMemory] = None):
@@ -85,6 +86,44 @@ JSON ŞEMASI:
             )
         return "\n".join(lines)
 
+    def _validate_mitigation_command(self, command: str, entry: "LogEntry") -> tuple[str, bool]:
+        """
+        Validates LLM-generated mitigation command for safety.
+        1. Ensures command starts with 'iptables' or 'fail2ban-client'.
+        2. Extracts IP from command and rejects RFC1918 private / loopback ranges.
+        Returns (safe_command, validated_bool).
+        """
+        safe_default = f"iptables -I INPUT -s {entry.ip_src} -j DROP"
+
+        # Rule 1: Command must start with an allowed prefix
+        stripped = command.strip()
+        if not (stripped.startswith("iptables") or stripped.startswith("fail2ban-client")):
+            logger.warning(f"[CMD_VALIDATION] Rejected command (bad prefix): {stripped!r}. Using safe default.")
+            return safe_default, False
+
+        # Rule 2: Extract IP address from the command
+        ip_match = re.search(r"\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b", stripped)
+        if not ip_match:
+            logger.warning("[CMD_VALIDATION] No IP found in command. Using safe default.")
+            return safe_default, False
+
+        ip = ip_match.group(1)
+
+        # Rule 3: Reject RFC1918 private / loopback / gateway ranges
+        _PRIVATE_PATTERNS = [
+            re.compile(r"^10\."),
+            re.compile(r"^172\.(1[6-9]|2\d|3[01])\."),
+            re.compile(r"^192\.168\."),
+            re.compile(r"^127\."),
+            re.compile(r"^0\.0\.0\.0$"),
+        ]
+        for pattern in _PRIVATE_PATTERNS:
+            if pattern.match(ip):
+                logger.warning(f"[CMD_VALIDATION] Rejected private/loopback IP in command: {ip}. Using safe default.")
+                return safe_default, False
+
+        return stripped, True
+
     def analyze(self, entry: LogEntry) -> ThreatAnalysisResult:
         """
         Executes Tier 2 deep analysis.
@@ -97,6 +136,14 @@ JSON ŞEMASI:
         similar_cases = self.memory.retrieve_similar_cases(entry.raw_text, top_k=settings.RAG_TOP_K)
         rag_prompt_section = self._format_rag_context(similar_cases)
 
+        # Prompt injection sanitization: detect adversarial log payloads
+        _INJECTION_MARKERS = ["ignore above", "ignore previous", "system:", "disregard"]
+        raw_text_for_prompt = entry.raw_text
+        injection_detected = any(marker in entry.raw_text.lower() for marker in _INJECTION_MARKERS)
+        if injection_detected:
+            raw_text_for_prompt = entry.raw_text[:200] + " [SANITIZED]"
+            logger.warning(f"[PROMPT_INJECTION] Potential injection detected in log {entry.id}. Truncated to 200 chars.")
+
         user_prompt = f"""{rag_prompt_section}
 
 [ANALİZ EDİLECEK ŞÜPHELİ LOG]:
@@ -104,7 +151,7 @@ JSON ŞEMASI:
 - Kaynak IP: {entry.ip_src}
 - Hedef IP & Port: {entry.ip_dst}:{entry.port_dst}
 - Protokol: {entry.protocol}
-- Ham Log Satırı: {entry.raw_text}
+- Ham Log Satırı: {raw_text_for_prompt}
 - Akış Metrikleri: {json.dumps(entry.features)}
 
 Bu log için JSON formatında tehdit analizini ve saldırgan IP ({entry.ip_src}) için iptables engelleme komutunu üret:"""
@@ -151,6 +198,9 @@ Bu log için JSON formatında tehdit analizini ve saldırgan IP ({entry.ip_src})
         
         cs_info = self._get_cs_educational_context(attack_type, mitre_id, entry.ip_src, entry.port_dst)
 
+        # Validate mitigation command (safety check against private IPs / bad prefixes)
+        mitigation_cmd, cmd_validated = self._validate_mitigation_command(mitigation_cmd, entry)
+
         return ThreatAnalysisResult(
             log_id=entry.id,
             attack_type=attack_type,
@@ -163,7 +213,8 @@ Bu log için JSON formatında tehdit analizini ve saldırgan IP ({entry.ip_src})
             cached_or_rag=len(similar_cases) > 0,
             cs_explanation=cs_info["cs_explanation"],
             mitre_name=cs_info["mitre_name"],
-            command_breakdown=cs_info["command_breakdown"]
+            command_breakdown=cs_info["command_breakdown"],
+            command_validated=cmd_validated
         )
 
     def _get_cs_educational_context(self, attack_type: str, mitre_id: str, ip_src: str, port_dst: int) -> Dict[str, str]:

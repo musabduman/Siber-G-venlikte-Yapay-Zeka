@@ -136,6 +136,26 @@ class VectorMemory:
         except Exception:
             return 0
 
+    def store_negative_example(self, log_id: str, raw_log: str, analyst_note: str = "False Positive"):
+        """Stores a false positive as a negative example to prevent future misclassification."""
+        try:
+            doc_id = f"fp-{log_id}"
+            metadata = {
+                "attack_type": "FALSE_POSITIVE",
+                "severity": "None",
+                "mitre_id": "N/A",
+                "summary": analyst_note,
+                "mitigation_command": "N/A",
+            }
+            self.collection.upsert(
+                ids=[doc_id],
+                documents=[raw_log],
+                metadatas=[metadata]
+            )
+            logger.info(f"Stored false positive negative example {doc_id} into ChromaDB memory.")
+        except Exception as e:
+            logger.error(f"Error persisting negative example to ChromaDB: {e}")
+
     def reset_memory(self):
         """Clears all learned records and restores clean baseline seed incidents."""
         try:

@@ -5,7 +5,7 @@ Enforces strict typing across all pipeline tiers.
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 import uuid
 from pydantic import BaseModel, Field
 
@@ -45,6 +45,7 @@ class Tier1Result(BaseModel):
     anomaly_score: float = Field(default=0.0, ge=0.0, le=1.0)
     matched_rule: Optional[str] = None
     processing_time_ms: float = Field(default=0.0)
+    feature_contributions: Optional[Dict[str, float]] = None
 
 
 class ThreatAnalysisResult(BaseModel):
@@ -66,6 +67,7 @@ class ThreatAnalysisResult(BaseModel):
     cs_explanation: Optional[str] = None
     mitre_name: Optional[str] = None
     command_breakdown: Optional[str] = None
+    command_validated: Optional[bool] = None
 
 
 class HumanFeedback(BaseModel):

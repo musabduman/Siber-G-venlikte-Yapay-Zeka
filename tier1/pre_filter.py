@@ -35,7 +35,8 @@ class Tier1PreFilter:
     # Fast CPU regex checks for text logs (Apache / SSH)
     REGEX_HEURISTICS = [
         (re.compile(r"(\bUNION\b|\bSELECT\b|'\s*OR\s*'1'='1|--|\bINFORMATION_SCHEMA\b)", re.IGNORECASE), "SQLi Pattern"),
-        (re.compile(r"(<script|onerror\s*=|onload\s*=|javascript:|document\.cookie)", re.IGNORECASE), "XSS Pattern"),
+        # XSS: literal tags + unicode-escaped variants (\u003c = < , \u003e = >)
+        (re.compile(r"(<script|\\u003cscript|onerror\s*=|onload\s*=|javascript:|document\.cookie)", re.IGNORECASE), "XSS Pattern"),
         (re.compile(r"(Failed password|authentication attempts exceeded|Invalid user)", re.IGNORECASE), "SSH Brute-Force Pattern"),
         (re.compile(r"(SYN_FLOOD|anomalous packet rate|embryonic TCP)", re.IGNORECASE), "DDoS Signature"),
     ]
@@ -152,7 +153,7 @@ class Tier1PreFilter:
 
         elapsed_ms = (time.perf_counter() - start_time) * 1000.0
 
-        return Tier1Result(
+        result = Tier1Result(
             log_id=entry.id,
             log_entry=entry,
             is_suspicious=is_suspicious,
@@ -160,6 +161,23 @@ class Tier1PreFilter:
             matched_rule=matched_rule,
             processing_time_ms=round(elapsed_ms, 3),
         )
+        result.feature_contributions = self.get_feature_importance()
+        return result
+
+    def get_feature_importance(self) -> dict:
+        """Returns feature importance based on SGDClassifier coefficients."""
+        if not self.is_initialized:
+            return {}
+        try:
+            coef = self.classifier.coef_[0]
+        except AttributeError:
+            return {}
+        importances = {name: float(abs(val)) for name, val in zip(self.FEATURE_NAMES, coef)}
+        # Normalize to 0-1
+        max_val = max(importances.values()) if importances else 1.0
+        if max_val == 0.0:
+            max_val = 1.0
+        return {k: round(v / max_val, 3) for k, v in sorted(importances.items(), key=lambda x: -x[1])}
 
     def update_model_online(self, entry: LogEntry, is_true_attack: bool) -> float:
         """
