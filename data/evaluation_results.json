@@ -1,5 +1,5 @@
 {
-  "timestamp": 1792791161.6949863,
+  "timestamp": 1792791905.144762,
   "data_source": "Sentetik (CIC-IDS2017 Benzeri, scripts/make_dataset.py)",
   "is_synthetic": true,
   "operational_threshold": 0.65,
@@ -71,12 +71,12 @@
     }
   ],
   "end_to_end_latency_ms": {
-    "mean_latency_ms": 0.182,
-    "median_latency_ms": 0.139,
-    "p95_latency_ms": 0.386,
-    "p99_latency_ms": 1.02,
-    "min_latency_ms": 0.125,
-    "max_latency_ms": 2.443,
+    "mean_latency_ms": 0.162,
+    "median_latency_ms": 0.143,
+    "p95_latency_ms": 0.26,
+    "p99_latency_ms": 0.45,
+    "min_latency_ms": 0.128,
+    "max_latency_ms": 0.895,
     "samples_tested": 1000
   }
 }
