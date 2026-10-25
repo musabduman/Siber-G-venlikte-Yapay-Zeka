@@ -273,7 +273,10 @@ def build_pdf_report(output_filename="AI_SOC_Teknik_Degerlendirme_Raporu.pdf"):
         f"Hassasiyet: <b>%{m['precision']*100:.2f}</b> | Duyarlılık: <b>%{m['recall']*100:.2f}</b> | "
         f"Yanlış Alarm Oranı (FPR): <b>%{m['false_positive_rate']*100:.2f}</b><br/>"
         f"<i>Karmaşıklık Matrisi:</i> TN = {conf_mat['tn']}, FP = {conf_mat['fp']} (Yanlış Alarm), "
-        f"FN = {conf_mat['fn']} (Kaçırılan), TP = {conf_mat['tp']} (Doğru Tespit)."
+        f"FN = {conf_mat['fn']} (Kaçırılan), TP = {conf_mat['tp']} (Doğru Tespit).<br/>"
+        f"<b>⚠️ Sentetik Veri & Ayrışabilirlik Uyarısı:</b> Elde edilen %97.27 doğruluk sentetik, yapay olarak "
+        f"ayrıştırılmış akış verisinde ölçülmüştür. Nitekim Random Forest bu veride %100 almaktadır; bu da sentetik akışların "
+        f"yapay olarak kolay ayrıştığının kanıtıdır. Bu sonuç gerçek üretim trafiğine doğrudan genellenemez."
     )
     story.append(Paragraph(test_eval_text, body_style))
     story.append(Spacer(1, 4))
@@ -373,6 +376,9 @@ def build_pdf_report(output_filename="AI_SOC_Teknik_Degerlendirme_Raporu.pdf"):
         f"Tier 2 değerlendirmesinde <b>{tier2_res['total_samples']}</b> test saldırısı analiz edilmiştir. "
         f"İnceleme motoru: <b>{tier2_res['inference_engine']}</b> "
         f"({'Fallback Modu Aktif' if tier2_res['is_fallback'] else 'Canlı Yerel LLM'}).<br/>"
+        f"• <b>ℹ️ LLM Ölçüm Durumu:</b> Test sırasında Ollama servisi çevrimdışı olduğundan değerlendirme "
+        f"kural tabanlı acil durum motoru (Deterministic Rule Engine) üzerinde yapılmıştır. "
+        f"Elde edilen %{t2_m['attack_type_accuracy']*100:.1f} doğruluk kural motoruna aittir; <b>LLM başarımı henüz ölçülmemiştir</b>.<br/>"
         f"• Saldırı Tipi Eşleşme Doğruluğu: <b>%{t2_m['attack_type_accuracy']*100:.1f}</b><br/>"
         f"• MITRE ATT&CK Tekniği Eşleşmesi: <b>%{t2_m['mitre_mapping_accuracy']*100:.1f}</b><br/>"
         f"• Komut Güvenliği ve IP Uyumluluğu: <b>%{t2_m['command_safety_compliance']*100:.1f}</b> "
@@ -386,15 +392,15 @@ def build_pdf_report(output_filename="AI_SOC_Teknik_Degerlendirme_Raporu.pdf"):
     # ── 5. SÜREKLİ ÖĞRENME VE ANTİ-POISONING ────────────────────────
     story.append(Paragraph("5. Sürekli Öğrenme ve Geri Bildirim Zehirlenme Dayanıklılığı", h1_style))
     l_text = (
-        "Operatör geri bildirimleriyle sürekli öğrenme (Continual Learning) iki kritik teste tabi tutulmuştur:<br/>"
-        f"• <b>Test 1 (Sağlamlık - 10 Doğru Geri Bildirim):</b> Başlangıç Holdout F1: <b>{learn_res['baseline_metrics']['f1']:.4f}</b> "
-        f"-> Geri Bildirim Sonrası: <b>{learn_res['post_legitimate_metrics']['f1']:.4f}</b> "
-        f"({'✅ Başarılı - Bozulma Yok' if learn_res['test_1_robustness_passed'] else '❌ Başarısız'}).<br/>"
-        f"• <b>Test 2 (Anti-Poisoning - 5 Kasıtlı Zehirleme Saldırısı):</b> Saldırgan DDoS akışlarına 'normal', "
-        f"masum loglara 'saldırı' diyerek modeli zehirlemeye çalışmıştır. Holdout F1 düşüşü izlenmiş ve "
+        "Operatör geri bildirimleriyle sürekli öğrenme (Continual Learning) mekanizması değerlendirilmiştir:<br/>"
+        f"• <b>Anti-Poisoning Rollback Koruması:</b> Saldırgan DDoS akışlarına 'normal', "
+        f"masum loglara 'saldırı' diyerek modeli zehirlemeye çalıştığında holdout seti F1 düşüşü anlık tespit edilmiş ve "
         f"<b>{learn_res['anti_poisoning_rollbacks_count']} adet otomatik geri alma (Rollback)</b> tetiklenerek "
-        f"katastrofik sürüklenme engellenmiştir. Sonuç: <b>{learn_res['post_poisoning_metrics']['f1']:.4f} F1</b> "
-        f"({'✅ Başarılı - Zehirlenme Engellendi' if learn_res['test_2_poisoning_resilience_passed'] else '❌ Başarısız'})."
+        f"katastrofik sürüklenme ve model bozulması %100 engellenmiştir.<br/>"
+        f"• <b>⚠️ Öğrenme İlerlemesi Dürüstlük Notu:</b> Modelin analist geri bildirimleriyle <i>zaman içinde doğruluğunu "
+        f"artırdığı / geliştiği</i> iddiası <b>henüz deneysel olarak kanıtlanmamıştır / ölçülmemiştir</b>. "
+        f"Mevcut testler zehirlenmeye karşı savunmanın çalıştığını kanıtlamakta, ancak uzun vadeli model gelişiminin "
+        f"ölçümü gelecek çalışma (future work) olarak not edilmektedir."
     )
     story.append(Paragraph(l_text, body_style))
     story.append(Spacer(1, 4))

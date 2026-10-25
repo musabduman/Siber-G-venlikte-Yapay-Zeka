@@ -54,15 +54,21 @@ Tüm sayılar test setleri üzerinden `evaluate_*.py` scriptleriyle dinamik üre
 
 | Değerlendirme Ekseni | Ölçülen Metrik | Sonuç | Doğrulama Dosyası |
 | :--- | :--- | :--- | :--- |
-| **Tier 1 Tablosal Akış Modeli** | F1-Skoru (5-Katlı Çapraz Doğrulama) | **0.9419** (Eski model: 0.5709) | `data/model_comparison.json` |
+| **Tier 1 Tablosal Akış Modeli** | F1-Skoru (5-Katlı Çapraz Doğrulama) | **0.9419** (Eski ham port modeli: 0.5709) | `data/model_comparison.json` |
 | **Tier 1 Ayrık Test Seti** | Doğruluk / F1 (Eşik = 0.65) | **%97.27** / **0.9622** | `data/evaluation_results.json` |
-| **Uçtan Uca Çıkarım Gecikmesi** | Ortalama / P95 Gecikme | **0.182 ms** / **0.386 ms** (CPU) | `data/evaluation_results.json` |
-| **Adversarial Gizleme Dayanıklılığı** | Test Saldırı Tespit Oranı | **%97.87** (46/47 tespit) | `data/adversarial_results.json` |
-| **Masum Log Yanlış Alarmı (FPR)** | Masum Loglarda Hata Oranı | **%9.26** (10/108 FP) | `data/adversarial_results.json` |
-| **Komut ve IP Güvenliği** | Güvenlik Uyumluluğu (Non-Global IP) | **%100.0** (0 tehlikeli IP) | `data/tier2_results.json` |
-| **Zehirlenme Dayanıklılığı** | 5 Kasıtlı Zehirleme Altında F1 | **Bozulma Engellendi (5 Rollback)** | `data/learning_results.json` |
+| **Uçtan Uca Çıkarım Gecikmesi** | Ortalama / P95 Gecikme | **0.162 ms** / **0.260 ms** (CPU) | `data/evaluation_results.json` |
+| **Adversarial Gizleme Dayanıklılığı** | Test Saldırı Tespit Oranı | **%97.62** (41 / 42 tespit) | `data/adversarial_results.json` |
+| **Masum Log Yanlış Alarmı (FPR)** | Masum Loglarda Hata Oranı | **%0.00** (0 / 108 yanlış alarm) | `data/adversarial_results.json` |
+| **Tier 2 Acil Durum Kural Motoru** | Eşleşme Doğruluğu / IP Güvenliği | **%66.67** / **%100.0** (0 iç IP kuralı) | `data/tier2_results.json` |
+| **Geri Bildirim Zehirlenme Koruması** | 5 Kasıtlı Zehirleme Altında Rollback | **Zehirlenme Engellendi (5 / 5 Rollback)** | `data/learning_results.json` |
 
-> **Kaçırılan Örnek Açıklaması:** Test setindeki `GET /auth?user=' OR user=CHAR(97,100,109,105,110) HTTP/1.1 200` varyantı ön filtreyi atlatmıştır. Dürüstlük kuralı gereğince test setinden silinmemiş, raporda sistemin bilinen sınırlaması olarak listelenmiştir.
+> ⚠️ **Sentetik Veri ve Genelleme Uyarısı:** %97.27 doğruluk ve %0 yanlış alarm oranı sentetik olarak üretilmiş akış verisinde (`scripts/make_dataset.py`) ölçülmüştür. Nitekim Random Forest bu veride %100 almaktadır; bu da sentetik akışların yapay olarak kolay ayrıştığının açık bir kanıtıdır. Bu sonuç gerçek üretim ortamı trafiğine doğrudan genellenemez.
+
+> ℹ️ **Tier 2 LLM Durumu:** Test sırasında yerel Ollama servisi çevrimdışı olduğundan Tier 2 metrikleri kural tabanlı acil durum motoru (Deterministic Expert Fallback) üzerinden ölçülmüştür. LLM başarım ölçümü henüz yapılmamıştır.
+
+> 🔄 **Sürekli Öğrenme Durumu:** Zehirlenmeye karşı koruma başarıyla kanıtlanmıştır (5 kasıtlı zehirleme denemesinde 5 otomatik rollback tetiklenmiştir). Ancak *'model analist geri bildirimleriyle zaman içinde gelişiyor'* iddiası henüz deneysel olarak ölçülmemiştir / kanıtlanmamıştır.
+
+> ⚠️ **Kaçırılan Tek Örnek:** Test setindeki `GET /auth?user=' OR user=CHAR(97,100,109,105,110) HTTP/1.1 200` varyantı ön filtreyi atlatmıştır. Dürüstlük kuralı gereğince test setinden silinmemiş, raporda ve arayüzde sistemin bilinen sınırlaması olarak listelenmiştir.
 
 ---
 

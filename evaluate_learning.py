@@ -39,8 +39,9 @@ def evaluate_learning():
     print("🔄  AI-SOC CONTINUAL LEARNING & ANTI-POISONING EVALUATION")
     print("=" * 70)
 
-    # Initialize fresh Tier1PreFilter
+    # Initialize fresh Tier1PreFilter (reset to pristine cold-start state)
     prefilter = Tier1PreFilter()
+    prefilter.reset_model()
 
     # Load holdout evaluation dataset
     dataset_path = DATA_DIR / "synthetic_cic_flows.csv"
@@ -148,7 +149,15 @@ def evaluate_learning():
         "anti_poisoning_rollbacks_count": int(rollbacks_triggered),
         "test_1_robustness_passed": bool(test1_passed),
         "test_2_poisoning_resilience_passed": bool(test2_passed),
-        "conclusion": "Catastrophic drift prevented via holdout validation and automatic weight rollback."
+        "model_improves_over_time_proven": False,
+        "honest_finding": (
+            "Zehirlenme koruması (anti-poisoning rollback) başarıyla doğrulandı: "
+            "5 kasıtlı zehirleme girişiminin tamamı holdout düşüşüyle yakalanıp geri alındı (5/5). "
+            "ANCAK modelin analist geri bildirimleriyle zaman içinde geliştiği iddiası "
+            "HENÜZ KANITLANMAMIŞTIR (deneysel olarak ölçülmemiştir). Bu durum jüriye açıkça "
+            "'henüz ölçülmedi / gelecek çalışma' olarak bildirilmelidir."
+        ),
+        "conclusion": "Zehirlenmeye karşı koruma kanıtlandı; sürekli öğrenmeyle modelin geliştiği iddiası henüz kanıtlanmadı."
     }
 
     with open(RESULTS_PATH, "w", encoding="utf-8") as f:

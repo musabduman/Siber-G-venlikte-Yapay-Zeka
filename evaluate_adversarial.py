@@ -92,17 +92,24 @@ def run_adversarial_evaluation():
             features=features,
         )
 
-        res = prefilter.evaluate(entry)
-
-        regex_caught = res.matched_rule is not None
-        # Check ML-only detection probability
         feat_raw = prefilter.extract_features(entry)
         ml_score = 0.0
         if feat_raw is not None and prefilter.is_initialized:
             feat_scaled = prefilter.scaler.transform(feat_raw)
             ml_score = float(prefilter.classifier.predict_proba(feat_scaled)[0][1])
         ml_caught = ml_score >= settings.ML_ANOMALY_THRESHOLD
-        combined_caught = res.is_suspicious
+
+        burst_count = item.get("burst_count", 1)
+        res = None
+        combined_caught = False
+        regex_caught = False
+
+        for _ in range(burst_count):
+            res = prefilter.evaluate(entry)
+            if res.matched_rule is not None:
+                regex_caught = True
+            if res.is_suspicious:
+                combined_caught = True
 
         if attack_type in family_stats:
             family_stats[attack_type]["total"] += 1

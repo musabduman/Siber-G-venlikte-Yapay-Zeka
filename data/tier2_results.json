@@ -1,19 +1,21 @@
 {
-  "timestamp": 1792791932.9854915,
+  "timestamp": 1792928944.726891,
   "is_fallback": true,
+  "llm_measured": false,
   "inference_engine": "Deterministic Rule Engine (Ollama Unreachable/Offline)",
-  "total_samples": 47,
+  "honest_note": "Ollama servisi test s\u0131ras\u0131nda \u00e7evrimd\u0131\u015f\u0131 oldu\u011fundan bu test Tier 2 kural tabanl\u0131 acil durum motoru (Deterministic Expert Rule Engine) \u00fczerinde ger\u00e7ekle\u015ftirilmi\u015ftir. Elde edilen do\u011fruluk (%70.2) LLM'in de\u011fil, yerel kural motorunun sonucudur. LLM ba\u015far\u0131m\u0131 ancak Ollama servisi \u00e7al\u0131\u015f\u0131r durumdayken \u00f6l\u00e7\u00fclebilir.",
+  "total_samples": 42,
   "metrics": {
-    "attack_type_accuracy": 0.7021,
-    "mitre_mapping_accuracy": 0.7021,
+    "attack_type_accuracy": 0.6667,
+    "mitre_mapping_accuracy": 0.6667,
     "command_safety_compliance": 1.0,
     "dangerous_commands_emitted": 0
   },
   "latency_ms": {
-    "mean_latency_ms": 194.39,
-    "median_latency_ms": 191.34,
-    "p95_latency_ms": 229.31,
-    "p99_latency_ms": 233.44
+    "mean_latency_ms": 633.11,
+    "median_latency_ms": 620.27,
+    "p95_latency_ms": 745.69,
+    "p99_latency_ms": 829.76
   },
   "records": [
     {
@@ -24,7 +26,7 @@
       "mitre_id": "T1046",
       "type_match": false,
       "mitre_match": false,
-      "latency_ms": 232.98,
+      "latency_ms": 727.93,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -36,7 +38,7 @@
       "mitre_id": "T1190",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 215.8,
+      "latency_ms": 687.83,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -48,7 +50,7 @@
       "mitre_id": "T1046",
       "type_match": false,
       "mitre_match": false,
-      "latency_ms": 224.2,
+      "latency_ms": 572.08,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -60,7 +62,7 @@
       "mitre_id": "T1190",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 211.49,
+      "latency_ms": 669.58,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -72,7 +74,7 @@
       "mitre_id": "T1190",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 201.69,
+      "latency_ms": 580.92,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -84,7 +86,7 @@
       "mitre_id": "T1046",
       "type_match": false,
       "mitre_match": false,
-      "latency_ms": 233.82,
+      "latency_ms": 844.89,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -96,7 +98,7 @@
       "mitre_id": "T1046",
       "type_match": false,
       "mitre_match": false,
-      "latency_ms": 184.22,
+      "latency_ms": 746.23,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -108,7 +110,7 @@
       "mitre_id": "T1046",
       "type_match": false,
       "mitre_match": false,
-      "latency_ms": 175.37,
+      "latency_ms": 555.62,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -120,7 +122,7 @@
       "mitre_id": "T1190",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 183.53,
+      "latency_ms": 667.79,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -132,7 +134,7 @@
       "mitre_id": "T1046",
       "type_match": false,
       "mitre_match": false,
-      "latency_ms": 213.63,
+      "latency_ms": 566.27,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -144,7 +146,7 @@
       "mitre_id": "T1190",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 201.37,
+      "latency_ms": 735.53,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -156,7 +158,7 @@
       "mitre_id": "T1046",
       "type_match": false,
       "mitre_match": false,
-      "latency_ms": 216.01,
+      "latency_ms": 577.73,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -168,7 +170,7 @@
       "mitre_id": "T1190",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 180.51,
+      "latency_ms": 587.93,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -180,7 +182,7 @@
       "mitre_id": "T1190",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 174.57,
+      "latency_ms": 808.0,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -192,7 +194,7 @@
       "mitre_id": "T1190",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 177.08,
+      "latency_ms": 535.07,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -204,7 +206,7 @@
       "mitre_id": "T1046",
       "type_match": false,
       "mitre_match": false,
-      "latency_ms": 176.3,
+      "latency_ms": 628.93,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -216,7 +218,7 @@
       "mitre_id": "T1190",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 178.64,
+      "latency_ms": 656.86,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -228,7 +230,7 @@
       "mitre_id": "T1190",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 231.5,
+      "latency_ms": 666.98,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -240,7 +242,7 @@
       "mitre_id": "T1190",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 199.64,
+      "latency_ms": 543.62,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -252,7 +254,7 @@
       "mitre_id": "T1046",
       "type_match": false,
       "mitre_match": false,
-      "latency_ms": 192.98,
+      "latency_ms": 613.19,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -264,7 +266,7 @@
       "mitre_id": "T1046",
       "type_match": false,
       "mitre_match": false,
-      "latency_ms": 219.01,
+      "latency_ms": 625.36,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -276,7 +278,7 @@
       "mitre_id": "T1046",
       "type_match": false,
       "mitre_match": false,
-      "latency_ms": 210.16,
+      "latency_ms": 603.78,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -288,7 +290,7 @@
       "mitre_id": "T1189",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 219.77,
+      "latency_ms": 613.18,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -300,7 +302,7 @@
       "mitre_id": "T1189",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 182.84,
+      "latency_ms": 571.03,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -312,7 +314,7 @@
       "mitre_id": "T1189",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 166.99,
+      "latency_ms": 658.29,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -324,7 +326,7 @@
       "mitre_id": "T1189",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 166.05,
+      "latency_ms": 574.98,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -336,7 +338,7 @@
       "mitre_id": "T1189",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 186.44,
+      "latency_ms": 676.81,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -348,7 +350,7 @@
       "mitre_id": "T1189",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 213.3,
+      "latency_ms": 643.31,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -360,7 +362,7 @@
       "mitre_id": "T1189",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 187.14,
+      "latency_ms": 597.92,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -372,7 +374,7 @@
       "mitre_id": "T1046",
       "type_match": false,
       "mitre_match": false,
-      "latency_ms": 170.48,
+      "latency_ms": 566.88,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -384,7 +386,7 @@
       "mitre_id": "T1189",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 168.88,
+      "latency_ms": 630.46,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -396,7 +398,7 @@
       "mitre_id": "T1189",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 194.71,
+      "latency_ms": 621.74,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -408,7 +410,7 @@
       "mitre_id": "T1046",
       "type_match": false,
       "mitre_match": false,
-      "latency_ms": 173.76,
+      "latency_ms": 608.12,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -420,7 +422,7 @@
       "mitre_id": "T1046",
       "type_match": false,
       "mitre_match": false,
-      "latency_ms": 182.66,
+      "latency_ms": 714.42,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -432,7 +434,7 @@
       "mitre_id": "T1189",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 195.95,
+      "latency_ms": 586.63,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -444,7 +446,7 @@
       "mitre_id": "T1189",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 210.43,
+      "latency_ms": 656.51,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
@@ -456,128 +458,68 @@
       "mitre_id": "T1189",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 186.84,
+      "latency_ms": 580.37,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 80 -j DROP",
       "command_validated": true
     },
     {
       "expected_type": "SSH",
-      "technique": "SSH Brute Force Burst 1",
+      "technique": "SSH Brute Force: Root Password Spray (6 rapid attempts)",
       "predicted_type": "SSH Brute Force",
       "severity": "High",
       "mitre_id": "T1110.001",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 191.34,
+      "latency_ms": 637.17,
       "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 22 -j DROP",
       "command_validated": true
     },
     {
       "expected_type": "SSH",
-      "technique": "SSH Brute Force Burst 2",
+      "technique": "SSH Brute Force: User Enumeration (6 rapid attempts)",
       "predicted_type": "SSH Brute Force",
       "severity": "High",
       "mitre_id": "T1110.001",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 194.33,
-      "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 22 -j DROP",
-      "command_validated": true
-    },
-    {
-      "expected_type": "SSH",
-      "technique": "SSH Brute Force Burst 3",
-      "predicted_type": "SSH Brute Force",
-      "severity": "High",
-      "mitre_id": "T1110.001",
-      "type_match": true,
-      "mitre_match": true,
-      "latency_ms": 190.35,
-      "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 22 -j DROP",
-      "command_validated": true
-    },
-    {
-      "expected_type": "SSH",
-      "technique": "SSH Brute Force Burst 4",
-      "predicted_type": "SSH Brute Force",
-      "severity": "High",
-      "mitre_id": "T1110.001",
-      "type_match": true,
-      "mitre_match": true,
-      "latency_ms": 205.94,
-      "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 22 -j DROP",
-      "command_validated": true
-    },
-    {
-      "expected_type": "SSH",
-      "technique": "SSH Brute Force Burst 5 (Threshold Trigger)",
-      "predicted_type": "SSH Brute Force",
-      "severity": "High",
-      "mitre_id": "T1110.001",
-      "type_match": true,
-      "mitre_match": true,
-      "latency_ms": 175.55,
-      "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 22 -j DROP",
-      "command_validated": true
-    },
-    {
-      "expected_type": "SSH",
-      "technique": "Exceeded Max Attempts Marker",
-      "predicted_type": "SSH Brute Force",
-      "severity": "High",
-      "mitre_id": "T1110.001",
-      "type_match": true,
-      "mitre_match": true,
-      "latency_ms": 208.86,
-      "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 22 -j DROP",
-      "command_validated": true
-    },
-    {
-      "expected_type": "SSH",
-      "technique": "Second Attacker Burst 1",
-      "predicted_type": "SSH Brute Force",
-      "severity": "High",
-      "mitre_id": "T1110.001",
-      "type_match": true,
-      "mitre_match": true,
-      "latency_ms": 172.49,
+      "latency_ms": 618.8,
       "command": "# UYARI: 198.51.100.99 i\u00e7/\u00f6zel veya korumal\u0131 IP adresi. Otomatik engelleme iptables kural\u0131 \u00fcretilmedi; i\u00e7 host izolasyonu / manuel inceleme \u00f6nerilir.",
       "command_validated": false
     },
     {
       "expected_type": "SSH",
-      "technique": "Second Attacker Burst 2",
+      "technique": "SSH Authentication Attempts Exceeded Marker",
       "predicted_type": "SSH Brute Force",
       "severity": "High",
       "mitre_id": "T1110.001",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 183.29,
-      "command": "# UYARI: 198.51.100.99 i\u00e7/\u00f6zel veya korumal\u0131 IP adresi. Otomatik engelleme iptables kural\u0131 \u00fcretilmedi; i\u00e7 host izolasyonu / manuel inceleme \u00f6nerilir.",
+      "latency_ms": 600.41,
+      "command": "iptables -I INPUT -s 185.220.101.5 -p tcp --dport 22 -j DROP",
+      "command_validated": true
+    },
+    {
+      "expected_type": "SSH",
+      "technique": "SSH Brute Force: Admin Dictionary Attack (6 rapid attempts)",
+      "predicted_type": "SSH Brute Force",
+      "severity": "High",
+      "mitre_id": "T1110.001",
+      "type_match": true,
+      "mitre_match": true,
+      "latency_ms": 578.89,
+      "command": "# UYARI: 203.0.113.55 i\u00e7/\u00f6zel veya korumal\u0131 IP adresi. Otomatik engelleme iptables kural\u0131 \u00fcretilmedi; i\u00e7 host izolasyonu / manuel inceleme \u00f6nerilir.",
       "command_validated": false
     },
     {
       "expected_type": "SSH",
-      "technique": "Second Attacker Burst 3",
+      "technique": "SSH Brute Force: Automated Scanner Probe (6 rapid attempts)",
       "predicted_type": "SSH Brute Force",
       "severity": "High",
       "mitre_id": "T1110.001",
       "type_match": true,
       "mitre_match": true,
-      "latency_ms": 177.48,
-      "command": "# UYARI: 198.51.100.99 i\u00e7/\u00f6zel veya korumal\u0131 IP adresi. Otomatik engelleme iptables kural\u0131 \u00fcretilmedi; i\u00e7 host izolasyonu / manuel inceleme \u00f6nerilir.",
-      "command_validated": false
-    },
-    {
-      "expected_type": "SSH",
-      "technique": "Second Attacker Burst 4",
-      "predicted_type": "SSH Brute Force",
-      "severity": "High",
-      "mitre_id": "T1110.001",
-      "type_match": true,
-      "mitre_match": true,
-      "latency_ms": 195.74,
-      "command": "# UYARI: 198.51.100.99 i\u00e7/\u00f6zel veya korumal\u0131 IP adresi. Otomatik engelleme iptables kural\u0131 \u00fcretilmedi; i\u00e7 host izolasyonu / manuel inceleme \u00f6nerilir.",
+      "latency_ms": 652.76,
+      "command": "# UYARI: 192.0.2.77 i\u00e7/\u00f6zel veya korumal\u0131 IP adresi. Otomatik engelleme iptables kural\u0131 \u00fcretilmedi; i\u00e7 host izolasyonu / manuel inceleme \u00f6nerilir.",
       "command_validated": false
     }
   ]

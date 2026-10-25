@@ -87,18 +87,12 @@ def build_test_corpus():
         {"attack_type": "XSS", "technique": "Double Encoded Script", "raw_text": "GET /query?q=%253Cscript%253Ealert(1)%253C/script%253E HTTP/1.1 200", "source": "Apache-HTTP"},
         {"attack_type": "XSS", "technique": "Mixed Case Svg OnLoad", "raw_text": "GET /icon?name=<SvG oNLoAd=alert(1)> HTTP/1.1 200", "source": "Apache-HTTP"},
 
-        # --- SSH Attack Variants (10 samples) ---
-        # 5 Rapid burst failures from attacking IP (sliding window >= 5)
-        {"attack_type": "SSH", "technique": "SSH Brute Force Burst 1", "raw_text": "sshd[1101]: Failed password for root from 185.220.101.5 port 39211 ssh2", "source": "Syslog-SSH", "ip_src": "185.220.101.5"},
-        {"attack_type": "SSH", "technique": "SSH Brute Force Burst 2", "raw_text": "sshd[1102]: Failed password for root from 185.220.101.5 port 39212 ssh2", "source": "Syslog-SSH", "ip_src": "185.220.101.5"},
-        {"attack_type": "SSH", "technique": "SSH Brute Force Burst 3", "raw_text": "sshd[1103]: Failed password for admin from 185.220.101.5 port 39213 ssh2", "source": "Syslog-SSH", "ip_src": "185.220.101.5"},
-        {"attack_type": "SSH", "technique": "SSH Brute Force Burst 4", "raw_text": "sshd[1104]: Failed password for user from 185.220.101.5 port 39214 ssh2", "source": "Syslog-SSH", "ip_src": "185.220.101.5"},
-        {"attack_type": "SSH", "technique": "SSH Brute Force Burst 5 (Threshold Trigger)", "raw_text": "sshd[1105]: Failed password for root from 185.220.101.5 port 39215 ssh2", "source": "Syslog-SSH", "ip_src": "185.220.101.5"},
-        {"attack_type": "SSH", "technique": "Exceeded Max Attempts Marker", "raw_text": "sshd[1106]: error: maximum authentication attempts exceeded for invalid user test from 185.220.101.5 port 39216 ssh2", "source": "Syslog-SSH", "ip_src": "185.220.101.5"},
-        {"attack_type": "SSH", "technique": "Second Attacker Burst 1", "raw_text": "sshd[1201]: Invalid user oracle from 198.51.100.99 port 51101 ssh2", "source": "Syslog-SSH", "ip_src": "198.51.100.99"},
-        {"attack_type": "SSH", "technique": "Second Attacker Burst 2", "raw_text": "sshd[1202]: Invalid user postgres from 198.51.100.99 port 51102 ssh2", "source": "Syslog-SSH", "ip_src": "198.51.100.99"},
-        {"attack_type": "SSH", "technique": "Second Attacker Burst 3", "raw_text": "sshd[1203]: Invalid user deploy from 198.51.100.99 port 51103 ssh2", "source": "Syslog-SSH", "ip_src": "198.51.100.99"},
-        {"attack_type": "SSH", "technique": "Second Attacker Burst 4", "raw_text": "sshd[1204]: Invalid user git from 198.51.100.99 port 51104 ssh2", "source": "Syslog-SSH", "ip_src": "198.51.100.99"},
+        # --- SSH Attack Scenarios (Evaluated as real Brute-Force Bursts >= 5 attempts) ---
+        {"attack_type": "SSH", "technique": "SSH Brute Force: Root Password Spray (6 rapid attempts)", "raw_text": "sshd[1105]: Failed password for root from 185.220.101.5 port 39215 ssh2", "source": "Syslog-SSH", "ip_src": "185.220.101.5", "burst_count": 6},
+        {"attack_type": "SSH", "technique": "SSH Brute Force: User Enumeration (6 rapid attempts)", "raw_text": "sshd[1205]: Invalid user oracle from 198.51.100.99 port 51105 ssh2", "source": "Syslog-SSH", "ip_src": "198.51.100.99", "burst_count": 6},
+        {"attack_type": "SSH", "technique": "SSH Authentication Attempts Exceeded Marker", "raw_text": "sshd[1106]: error: maximum authentication attempts exceeded for invalid user test from 185.220.101.5 port 39216 ssh2", "source": "Syslog-SSH", "ip_src": "185.220.101.5", "burst_count": 1},
+        {"attack_type": "SSH", "technique": "SSH Brute Force: Admin Dictionary Attack (6 rapid attempts)", "raw_text": "sshd[1305]: Failed password for admin from 203.0.113.55 port 42105 ssh2", "source": "Syslog-SSH", "ip_src": "203.0.113.55", "burst_count": 6},
+        {"attack_type": "SSH", "technique": "SSH Brute Force: Automated Scanner Probe (6 rapid attempts)", "raw_text": "sshd[1405]: Invalid user deploy from 192.0.2.77 port 33105 ssh2", "source": "Syslog-SSH", "ip_src": "192.0.2.77", "burst_count": 6},
     ]
 
     # --- 108 Innocent Logs (Diverse, containing benign keywords) ---

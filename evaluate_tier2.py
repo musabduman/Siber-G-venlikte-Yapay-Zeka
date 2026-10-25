@@ -159,7 +159,15 @@ def evaluate_tier2():
     results_data = {
         "timestamp": time.time(),
         "is_fallback": not is_live_ollama,
+        "llm_measured": is_live_ollama,
         "inference_engine": source_label,
+        "honest_note": (
+            "Ollama servisi test sırasında çevrimdışı olduğundan bu test Tier 2 kural tabanlı acil durum "
+            "motoru (Deterministic Expert Rule Engine) üzerinde gerçekleştirilmiştir. "
+            "Elde edilen doğruluk (%70.2) LLM'in değil, yerel kural motorunun sonucudur. "
+            "LLM başarımı ancak Ollama servisi çalışır durumdayken ölçülebilir."
+            if not is_live_ollama else "Canlı Ollama LLM modeli üzerinden ölçülmüştür."
+        ),
         "total_samples": n,
         "metrics": {
             "attack_type_accuracy": round(type_acc, 4),

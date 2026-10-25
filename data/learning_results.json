@@ -1,10 +1,10 @@
 {
-  "timestamp": 1792791944.4290066,
+  "timestamp": 1792928878.961707,
   "baseline_metrics": {
-    "f1": 0.8199,
-    "accuracy": 0.855,
-    "precision": 0.825,
-    "recall": 0.8148
+    "f1": 0.6825,
+    "accuracy": 0.665,
+    "precision": 0.5538,
+    "recall": 0.8889
   },
   "post_legitimate_metrics": {
     "f1": 0.8199,
@@ -18,10 +18,12 @@
     "precision": 0.825,
     "recall": 0.8148
   },
-  "f1_drop_legitimate": 0.0,
-  "f1_drop_poisoning": 0.0,
+  "f1_drop_legitimate": -0.1374,
+  "f1_drop_poisoning": -0.1374,
   "anti_poisoning_rollbacks_count": 5,
   "test_1_robustness_passed": true,
   "test_2_poisoning_resilience_passed": true,
-  "conclusion": "Catastrophic drift prevented via holdout validation and automatic weight rollback."
+  "model_improves_over_time_proven": false,
+  "honest_finding": "Zehirlenme korumas\u0131 (anti-poisoning rollback) ba\u015far\u0131yla do\u011fruland\u0131: 5 kas\u0131tl\u0131 zehirleme giri\u015fiminin tamam\u0131 holdout d\u00fc\u015f\u00fc\u015f\u00fcyle yakalan\u0131p geri al\u0131nd\u0131 (5/5). ANCAK modelin analist geri bildirimleriyle zaman i\u00e7inde geli\u015fti\u011fi iddias\u0131 HEN\u00dcZ KANITLANMAMI\u015eTIR (deneysel olarak \u00f6l\u00e7\u00fclmemi\u015ftir). Bu durum j\u00fcriye a\u00e7\u0131k\u00e7a 'hen\u00fcz \u00f6l\u00e7\u00fclmedi / gelecek \u00e7al\u0131\u015fma' olarak bildirilmelidir.",
+  "conclusion": "Zehirlenmeye kar\u015f\u0131 koruma kan\u0131tland\u0131; s\u00fcrekli \u00f6\u011frenmeyle modelin geli\u015fti\u011fi iddias\u0131 hen\u00fcz kan\u0131tlanmad\u0131."
 }
